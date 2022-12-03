@@ -286,7 +286,6 @@ class Matrix():
                 
                
             elif datatag=='FERB':
-                #print('AAAAAAAAA')
                 blocksize=unpack('<i',f.read(4))[0]
                 date=unpack('<L',f.read(4))[0] #date
                 f.read(4)
