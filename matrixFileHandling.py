@@ -61,7 +61,6 @@ class Matrix():
                 
             try:                                   
                 datatag=f.read(4).decode()
-                #print(datatag) 
             except:
                 print("Koniec pliku") 
                 datatag=""
@@ -109,7 +108,6 @@ class Matrix():
         datatag=f.read(4).decode()
         
         while len(datatag)==4 and self.parameter['BREF'] != self.file:
-            #print(datatag)
             if datatag=='ATEM':
                 
                 blocksize=unpack('<i',f.read(4))[0]
