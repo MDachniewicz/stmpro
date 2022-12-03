@@ -205,7 +205,7 @@ class Matrix():
                     x0=x
                     while (x-x0)<blocksize:
                         if datatag=='REFX':
-                            size1=unpack('<i',yscc[x:x+4])[0] #nie wiem co to
+                            size1=unpack('<i',yscc[x:x+4])[0] #blocksize
                             x+=4
                             group_number=unpack('<i',yscc[x:x+4])[0]
                             x+=4
