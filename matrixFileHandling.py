@@ -225,15 +225,60 @@ class Matrix():
                                 x+=4
                                 parameter=yscc[x:x+size*2].decode('utf-16')
                                 x+=size*2
-                                
-                                
                                 data, offset = self.readData(yscc, x)
                                 x=offset
-                                
-                                 
                                 xfer_data[parameter]=[data]
                             self.parameter_xfer["XFER_"+str(group_number)] = [groupname, unit, xfer_data]
-                        
+                        elif datatag=='TCID':
+                            
+                            x+=8
+                            num_parameters=unpack('<i',yscc[x:x+4])[0]
+                            x+=4
+                            for y in range(num_parameters):
+                                
+                                x+=16
+                                size=unpack('<i',yscc[x:x+4])[0]
+                                x+=4
+                                parameter=yscc[x:x+size*2].decode('utf-16')
+                                x+=size*2
+                                size=unpack('<i',yscc[x:x+4])[0]
+                                x+=4
+                                parameter=yscc[x:x+size*2].decode('utf-16')
+                                x+=size*2
+                            num_parameters=unpack('<i',yscc[x:x+4])[0]
+                            x+=4
+                            for y in range(num_parameters):
+                                
+                                x+=4
+                                channel = unpack('<i',yscc[x:x+4])[0]
+                                x+=4
+                                
+                                x+=8
+                                size=unpack('<i',yscc[x:x+4])[0]
+                                x+=4
+                                parameter=yscc[x:x+size*2].decode('utf-16')
+                                x+=size*2
+                                size=unpack('<i',yscc[x:x+4])[0]
+                                x+=4
+                                unit=yscc[x:x+size*2].decode('utf-16')
+                                x+=size*2
+                                self.parameter_dict["DICT_"+str(channel)] = [parameter, unit,'']
+                            num_parameters=unpack('<i',yscc[x:x+4])[0]
+                            x+=4
+                            for i in range(num_parameters):
+                                
+                                x+=12
+                                channel = unpack('<i',yscc[x:x+4])[0]
+                                x+=4
+                                size=unpack('<i',yscc[x:x+4])[0]
+                                x+=4
+                                data=yscc[x:x+size*2].decode('utf-16')
+                                x+=size*2
+                                self.parameter_dict["DICT_"+str(channel)][2] = data
+                                
+                            
+                            
+                  
                         else:
                             x+=blocksize
                         
