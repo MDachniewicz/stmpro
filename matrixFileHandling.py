@@ -2,6 +2,12 @@
 """
 Created on Wed Jun 29 21:51:38 2022
 
+TO-DO:
+    1. Obsługa plików o różnych kombinacjach skanowania góra-dół w przód- w tył
+    2. Obsługa plików niepełnych
+    3. Obsługa plików I, I(V) i I(Z)
+
+
 @author: marek
 """
 import matplotlib.pyplot as plt
@@ -9,6 +15,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 from struct import unpack
 from datetime import datetime as dt
+import os
 
 
 class Matrix():
@@ -76,14 +83,28 @@ class Matrix():
         self.scale_data()
         self.reshape_data()
         
+    def set_file_type(self):
+        filename, file_extension = os.path.splitext(self.file)
+        if file_extension=='.Z_mtrx':    
+            self.filetype = 'Z'
+        
         
     def scale_data(self):
-        self.data=(self.data-self.parameter_xfer['XFER_5'][2]['Factor'])/self.parameter_xfer['XFER_5'][2]['Factor']
+        self.set_file_type()
+        for key in self.parameter_dict.keys():
+            if self.parameter_dict[key][0]==self.filetype:
+                break
+        key='XFER'+key[4::]
+        
+        if self.parameter_xfer[key][0]=='TFF_Linear1D':    
+            self.data=(self.data-self.parameter_xfer[key][2]['Factor'])/self.parameter_xfer[key][2]['Factor']
+        else:
+            self.data = (self.parameter_xfer[key][2]['Raw_1'] - self.parameter_xfer[key][2]['PreOffset']) * (self.data - self.parameter_xfer[key][2]['Offset']) /(self.parameter_xfer[key][2]['NeutralFactor'] * self.parameter_xfer[key][2]['PreFactor'])
         width=self.parameter['XYScanner.Width'][0]
         height=self.parameter['XYScanner.Height'][0]
-        poitns=self.parameter['XYScanner.Points'][0]
+        points=self.parameter['XYScanner.Points'][0]
         lines=self.parameter['XYScanner.Lines'][0]
-        self.x, self.y =  np.meshgrid(np.linspace(0, width, 400), np.linspace(0, height, 400))
+        self.x, self.y =  np.meshgrid(np.linspace(0, width, points), np.linspace(0, height, lines))
         
     def reshape_data(self):
         lines=self.parameter['XYScanner.Lines'][0]       
@@ -100,6 +121,9 @@ class Matrix():
         #    else:
         #        self.imageBackUp.append(x)
         #self.imageForwUp = np.reshape(self.imageForwUp, (-1, 400))
+        
+    def fill_data(self):
+        pass
         
     def openHeader(self):
         f = open(self.header, mode = 'r+b')
@@ -374,9 +398,9 @@ class Matrix():
         return data, offset
         
     def findHeader(self, filename):
-        self.header=filename[:filename.rfind('--')]+"_0001.mtrx" #"Si(553)-Pb2_0001.mtrx"
+        
         try:
-            pass
+            self.header=filename[:filename.rfind('--')]+"_0001.mtrx" #"Si(553)-Pb2_0001.mtrx"
         except:
             print("Nie znaleziono pliku .mtrx")
         
@@ -385,17 +409,16 @@ class Matrix():
         print(self.data)
 
     def show(self):
-        
-        
         ax = plt.subplot()
         im = ax.pcolor(self.x*10**9, self.y*10**9, self.imageForwUp)
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
+        ax.axis('equal')
         plt.colorbar(im, cax=cax)
         plt.show()
         #plt.imshow(self.imageForwUp, origin = 'lower')
         
 
 if __name__ == "__main__":
-    mtrx=Matrix("Si(553)-Pb2--29_1.Z_mtrx")
+    mtrx=Matrix("Si(111)-6x6 + 140Hz Au--4_1.Z_mtrx")
     mtrx.show()
