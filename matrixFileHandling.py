@@ -68,7 +68,6 @@ class Matrix():
                 
             try:                                   
                 datatag=f.read(4).decode()
-                #print(datatag) 
             except:
                 print("Koniec pliku") 
                 datatag=""
@@ -133,7 +132,6 @@ class Matrix():
         datatag=f.read(4).decode()
         
         while len(datatag)==4 and self.parameter['BREF'] != self.file:
-            #print(datatag)
             if datatag=='ATEM':
                 
                 blocksize=unpack('<i',f.read(4))[0]
@@ -420,5 +418,10 @@ class Matrix():
         
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     mtrx=Matrix("Si(111)-6x6 + 140Hz Au--4_1.Z_mtrx")
     mtrx.show()
+=======
+    mtrx=Matrix("Si(553)-Pb2--29_1.Z_mtrx")
+    mtrx.show()
+>>>>>>> 5204cedf053fb6c9487f63d2103bbbe8536897df
