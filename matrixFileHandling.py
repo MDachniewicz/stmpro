@@ -3,7 +3,7 @@
 Created on Wed Jun 29 21:51:38 2022
 
 TO-DO:
-    1. Obsługa plików o różnych kombinacjach skanowania góra-dół w przód- w tył
+    1. (TEST) Obsługa plików o różnych kombinacjach skanowania góra-dół w przód- w tył
     2. Obsługa plików niepełnych
     3. Obsługa plików I, I(V) i I(Z)
 
@@ -27,12 +27,15 @@ class Matrix():
     parameter_marks=[]
     parameter_xfer={}
     parameter_dict={}
+    axes = [[1, 0], [0, 0]]
     
     def __init__(self, file):
         self.file=file
         self.findHeader(file)
         self.openHeader()
-        self.openTopoData()
+        self.set_file_type()
+        if(self.filetype == 'Z'):
+            self.openTopoData()
     
         
     def openIVData(self):
@@ -90,7 +93,7 @@ class Matrix():
         
         
     def scale_data(self):
-        self.set_file_type()
+        
         for key in self.parameter_dict.keys():
             if self.parameter_dict[key][0]==self.filetype:
                 break
@@ -105,14 +108,34 @@ class Matrix():
         points=self.parameter['XYScanner.Points'][0]
         lines=self.parameter['XYScanner.Lines'][0]
         self.x, self.y =  np.meshgrid(np.linspace(0, width, points), np.linspace(0, height, lines))
-        
+    
+    def findImageAxes(self):
+        if self.parameter['XYScanner.X_Retrace'][0]==True:
+            self.axes[1][0]=1
+        if self.parameter['XYScanner.Y_Retrace'][0]==True:
+            self.axes[0][1]=1
+        if self.parameter['XYScanner.X_Retrace'][0]==True and self.parameter['XYScanner.Y_Retrace'][0]==True:
+            self.axes[1][1]=1
+    
     def reshape_data(self):
         lines=self.parameter['XYScanner.Lines'][0]       
         points=self.parameter['XYScanner.Points'][0] 
+        self.findImageAxes()
         
         data= np.reshape(self.data, (-1, points))
-        self.imageForwUp=data[:lines*2:2]
-        self.imageBackUp=data[1:lines*2:2]
+        if self.axes == [[1,0],[0,0]]:
+            self.imageForwUp=data[:lines:]
+        if self.axes == [[1,0],[1,0]]:
+            self.imageForwUp=data[:lines*2:2]
+            self.imageBackUp=data[1:lines*2:2]
+        if self.axes == [[1,1],[0,0]]:
+            self.imageForwUp=data[:lines:]
+            self.imageBackDwn=data[lines*2+1:lines*4+1:]
+        if self.axes == [[1,1],[1,1]]:
+            self.imageForwUp=data[:lines*2:2]
+            self.imageBackUp=data[1:lines*2:2]
+            self.imageForwDwn=data[lines*2:lines*4+1:2]
+            self.imageBackDwn=data[lines*2+1:lines*4+1:2]
         #tmp=0
         #for x in self.data:
         #    tmp=tmp+1
@@ -371,6 +394,7 @@ class Matrix():
             
             
     def readData(self, datablock, offset):
+        
         #print(datablock[offset:offset+4].decode())
         if datablock[offset:offset+4].decode()=='LOOB':
             offset+=4
@@ -420,5 +444,5 @@ class Matrix():
         
 
 if __name__ == "__main__":
-    mtrx=Matrix("Si(111)-6x6 + 140Hz Au--4_1.Z_mtrx")
+    mtrx=Matrix("Si(111)-6x6 Au+C60--1_1.Z_mtrx")
     mtrx.show()
