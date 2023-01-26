@@ -44,7 +44,7 @@ class Matrix():
     def openIZData(self):
         pass
     
-        
+       
     def openTopoData(self):        
         f = open(self.file, mode = 'r+b')
         if f.read(12).decode() != 'ONTMATRX0101':
@@ -61,8 +61,6 @@ class Matrix():
             if datatag=='CSED':
                 blocksize=unpack('<i',f.read(4))[0]
                 csed=f.read(blocksize)
-                #bricklet_size=unpack('<i',csed[24:28])[0]
-                #data_item_count=unpack('<i',csed[28:32])[0]
                 
             if datatag=='ATAD':
                 datasize=unpack('<i',f.read(4))[0]
@@ -76,10 +74,7 @@ class Matrix():
                 print("Koniec pliku") 
                 datatag=""
         f.close()        
-                
-        
-
-        
+                    
         dataformat = '<%di' % int(datasize/4)
         
         self.data = np.array(unpack(dataformat, data))
@@ -122,6 +117,11 @@ class Matrix():
         points=self.parameter['XYScanner.Points'][0] 
         self.findImageAxes()
         
+        expFileSize = sum(sum(self.axes,[]))*self.parameter['XYScanner.Lines'][0]*self.parameter['XYScanner.Points'][0]
+        
+        if expFileSize != self.data.size:
+            self.fill_data(expFileSize)
+        
         data= np.reshape(self.data, (-1, points))
         if self.axes == [[1,0],[0,0]]:
             self.imageForwUp=data[:lines:]
@@ -136,18 +136,13 @@ class Matrix():
             self.imageBackUp=data[1:lines*2:2]
             self.imageForwDwn=data[lines*2:lines*4+1:2]
             self.imageBackDwn=data[lines*2+1:lines*4+1:2]
-        #tmp=0
-        #for x in self.data:
-        #    tmp=tmp+1
-        #    if (tmp//400)%2==0:
-        #        self.imageForwUp.append(x)
-        #    else:
-        #        self.imageBackUp.append(x)
-        #self.imageForwUp = np.reshape(self.imageForwUp, (-1, 400))
+
+#Filling missing data with mean value of existing data        
+    def fill_data(self, expFileSize):
+        mean = [self.data.mean()]*(expFileSize-self.data.size)
+        self.data=np.concatenate((self.data,mean))
         
-    def fill_data(self):
-        pass
-        
+#Reading .mtrx header containing measurement parameters        
     def openHeader(self):
         f = open(self.header, mode = 'r+b')
         if f.read(12).decode() != 'ONTMATRX0101':
@@ -161,7 +156,6 @@ class Matrix():
                 
                 blocksize=unpack('<i',f.read(4))[0]
                 timestamp=dt.fromtimestamp(unpack('<L',f.read(4))[0])
-                #f.read(4)
                 atem=f.read(blocksize)
                 f.read(4)
                 
@@ -170,21 +164,21 @@ class Matrix():
             elif datatag=='DPXE': #DPXE
                 
                 blocksize=unpack('<i',f.read(4))[0]
-                timestamp=dt.fromtimestamp(unpack('<L',f.read(4))[0]) #data
+                timestamp=dt.fromtimestamp(unpack('<L',f.read(4))[0])
                 f.read(4)
                 dpxe=f.read(blocksize)
             
             elif datatag=='QESF': #QESF
                 blocksize=unpack('<i',f.read(4))[0]
                 
-                timestamp=dt.fromtimestamp(unpack('<L',f.read(4))[0]) #data
+                timestamp=dt.fromtimestamp(unpack('<L',f.read(4))[0]) 
                 f.read(4)
                 qesf=f.read(blocksize)
             
             elif datatag=='SPXE': #SPXE
                 blocksize=unpack('<i',f.read(4))[0]
                 
-                timestamp=dt.fromtimestamp(unpack('<L',f.read(4))[0]) #data
+                timestamp=dt.fromtimestamp(unpack('<L',f.read(4))[0]) 
                 f.read(4)
                 spxe=f.read(blocksize).decode('utf-16')
             
@@ -234,7 +228,7 @@ class Matrix():
                 blocksize=unpack('<i',f.read(4))[0]
                 date=unpack('<L',f.read(4))[0] #date
                 f.read(4)
-                tmp = f.read(blocksize)
+                f.read(blocksize)
                 
                 
             elif datatag=='YSCC':
@@ -322,15 +316,10 @@ class Matrix():
                                 data=yscc[x:x+size*2].decode('utf-16')
                                 x+=size*2
                                 self.parameter_dict["DICT_"+str(channel)][2] = data
-                                
-                            
-                            
-                  
+                                                  
                         else:
                             x+=blocksize
-                        
-                    
-                
+           
                
             elif datatag=='FERB':
                 blocksize=unpack('<i',f.read(4))[0]
@@ -340,9 +329,6 @@ class Matrix():
                 size = unpack('<i',ferb[4:8])[0]
                 self.parameter['BREF']=ferb[8:8+size*2].decode('utf-16')
                 
-                
-            #elif datatag=='REFX':
-                #print("AAAAAA")
                 
             elif datatag=='DOMP':
                 
@@ -386,21 +372,18 @@ class Matrix():
                 
             try:                                   
                 datatag=f.read(4).decode()
-                #print(datatag) 
             except:
-                print("Koniec pliku") 
+                print("End of File") 
                 datatag=""
         f.close()
             
             
     def readData(self, datablock, offset):
         
-        #print(datablock[offset:offset+4].decode())
         if datablock[offset:offset+4].decode()=='LOOB':
             offset+=4
             data=bool(unpack('<L', datablock[offset:offset+4])[0])
             offset+=4
-            #print("AAAAAAAAAAAAAAAAAAAAAAAAA")
         elif datablock[offset:offset+4].decode()=='GNOL':
             offset+=4
             data=unpack('<l', datablock[offset:offset+4])[0]
@@ -418,7 +401,6 @@ class Matrix():
             data=datablock[offset:offset+size*2].decode('utf-16')
             offset+=size*2
             
-        #print(offset)
         return data, offset
         
     def findHeader(self, filename):
@@ -426,7 +408,7 @@ class Matrix():
         try:
             self.header=filename[:filename.rfind('--')]+"_0001.mtrx" #"Si(553)-Pb2_0001.mtrx"
         except:
-            print("Nie znaleziono pliku .mtrx")
+            print(".mtrx file not found.")
         
         
     def __repr__(self):
@@ -444,5 +426,5 @@ class Matrix():
         
 
 if __name__ == "__main__":
-    mtrx=Matrix("Si(111)-6x6 Au+C60--1_1.Z_mtrx")
+    mtrx=Matrix("Si(111)-6x6 + 140Hz Au--6_1.Z_mtrx")
     mtrx.show()
