@@ -4,7 +4,7 @@ Created on Wed Jun 29 21:51:38 2022
 
 TO-DO:
     1. (TEST) Obsługa plików o różnych kombinacjach skanowania góra-dół w przód- w tył
-    2. Obsługa plików niepełnych
+    2. (TEST) Obsługa plików niepełnych
     3. Obsługa plików I, I(V) i I(Z)
 
 
@@ -24,9 +24,9 @@ class Matrix():
     imageForwDown=[]
     imageBackDown=[]
     parameter={'BREF':''}
+    parameter['XFER']={}
+    parameter['DICT']={}
     parameter_marks=[]
-    parameter_xfer={}
-    parameter_dict={}
     axes = [[1, 0], [0, 0]]
     
     def __init__(self, file):
@@ -89,15 +89,17 @@ class Matrix():
         
     def scale_data(self):
         
-        for key in self.parameter_dict.keys():
-            if self.parameter_dict[key][0]==self.filetype:
+        for key in self.parameter['DICT'].keys():
+            if self.parameter['DICT'][key][0]==self.filetype:
                 break
         key='XFER'+key[4::]
         
-        if self.parameter_xfer[key][0]=='TFF_Linear1D':    
-            self.data=(self.data-self.parameter_xfer[key][2]['Factor'])/self.parameter_xfer[key][2]['Factor']
+        if self.parameter["XFER"][key][0]=='TFF_Linear1D':    
+            self.data=(self.data-self.parameter["XFER"][key][2]['Factor'])/self.parameter["XFER"][key][2]['Factor']
         else:
-            self.data = (self.parameter_xfer[key][2]['Raw_1'] - self.parameter_xfer[key][2]['PreOffset']) * (self.data - self.parameter_xfer[key][2]['Offset']) /(self.parameter_xfer[key][2]['NeutralFactor'] * self.parameter_xfer[key][2]['PreFactor'])
+            self.data = (self.parameter["XFER"][key][2]['Raw_1'] - self.parameter["XFER"][key][2]['PreOffset']) * \
+            (self.data - self.parameter["XFER"][key][2]['Offset']) /(self.parameter["XFER"][key][2]['NeutralFactor'] * \
+                                                                     self.parameter["XFER"][key][2]['PreFactor'])
         width=self.parameter['XYScanner.Width'][0]
         height=self.parameter['XYScanner.Height'][0]
         points=self.parameter['XYScanner.Points'][0]
@@ -246,6 +248,7 @@ class Matrix():
                     x0=x
                     while (x-x0)<blocksize:
                         if datatag=='REFX':
+                            
                             size1=unpack('<i',yscc[x:x+4])[0] #blocksize
                             x+=4
                             group_number=unpack('<i',yscc[x:x+4])[0]
@@ -269,7 +272,7 @@ class Matrix():
                                 data, offset = self.readData(yscc, x)
                                 x=offset
                                 xfer_data[parameter]=[data]
-                            self.parameter_xfer["XFER_"+str(group_number)] = [groupname, unit, xfer_data]
+                            self.parameter["XFER"].update({"XFER_"+str(group_number):[groupname, unit, xfer_data]})
                         elif datatag=='TCID':
                             
                             x+=8
@@ -303,7 +306,7 @@ class Matrix():
                                 x+=4
                                 unit=yscc[x:x+size*2].decode('utf-16')
                                 x+=size*2
-                                self.parameter_dict["DICT_"+str(channel)] = [parameter, unit,'']
+                                self.parameter['DICT']["DICT_"+str(channel)] = [parameter, unit,'']
                             num_parameters=unpack('<i',yscc[x:x+4])[0]
                             x+=4
                             for i in range(num_parameters):
@@ -315,7 +318,7 @@ class Matrix():
                                 x+=4
                                 data=yscc[x:x+size*2].decode('utf-16')
                                 x+=size*2
-                                self.parameter_dict["DICT_"+str(channel)][2] = data
+                                self.parameter['DICT']["DICT_"+str(channel)][2] = data
                                                   
                         else:
                             x+=blocksize
@@ -412,7 +415,7 @@ class Matrix():
         
         
     def __repr__(self):
-        print(self.data)
+        return 'File: ' + self.parameter['BREF']
 
     def show(self):
         ax = plt.subplot()

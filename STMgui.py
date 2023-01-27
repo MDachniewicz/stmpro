@@ -6,7 +6,7 @@ Created on Wed Jun 29 13:41:45 2022
 """
 
 import sys, os
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QMessageBox, QLineEdit, QButtonGroup, QRadioButton, QMenu, QAction, QFileDialog)
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QMessageBox, QLineEdit, QButtonGroup, QRadioButton, QMenu, QAction, QFileDialog,QLabel, QVBoxLayout, QWidget)
 from PyQt5 import QtCore, QtWidgets, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -26,8 +26,10 @@ class MainWindow(QMainWindow):
         
         self.resultsWindows = list()
         
+        
     def setupUi(self, MainWindow):
          MainWindow.setObjectName("STMpro")
+         MainWindow.setWindowTitle("STMpro")
          MainWindow.resize(310, 80)
          self.centralwidget = QtWidgets.QWidget(MainWindow)
          self.centralwidget.setObjectName("central_widget")
@@ -71,7 +73,7 @@ class MainWindow(QMainWindow):
         self.exitAction.triggered.connect(self.exitFile)
 
     def openResultWindow(self, result):
-        win = ResultWindow1(data=result, parent=self)
+        win = ResultWindow(data=result)
         self.resultsWindows.append(win)
         win.show()
                 
@@ -81,7 +83,10 @@ class MainWindow(QMainWindow):
         data=GUIUtils.NewFile(files)
         self.openResultWindow(data)
             
-
+    def event(self, event):
+        if event.type() == QtCore.QEvent.WindowActivate:
+            self.on_window_activated()
+        return False
         
     def exitFile(self):
         self.close()
@@ -90,27 +95,45 @@ class MainWindow(QMainWindow):
         if e.key() == QtCore.Qt.Key_Escape:
             self.close()
             
-class ResultWindow1(QMainWindow):
-    def __init__(self, data=None, parent=None, width=5, height=4, dpi=100): 
-        self.parent=parent           
-        super(ResultWindow1, self).__init__(parent)
-        self.setupUi(self)    
+    def closeEvent(self,event):
+        for window in self.resultsWindows:
+            window.close()
+            
+    def on_window_activated(active_window):
+        if active_window:
+            print("Aktywne okno:", active_window.windowTitle())
+        else:
+            print("Aktywne okno: Brak")
+                    
+
         
-    def setupUi(self, MainWindow):
-         MainWindow.setObjectName("STMpro child")
-         MainWindow.resize(310, 80)
-         self.centralwidget = QtWidgets.QWidget(MainWindow)
-         self.centralwidget.setObjectName("central_widget")
-        
-class ResultWindow(QMainWindow,FigureCanvasQTAgg):
-    
-    
-    def __init__(self, data=None, parent=None, width=5, height=4, dpi=100):
+class ResultWindow(QMainWindow):
+
+
+    #def __init__(self, data=None, parent=None, width=5, height=4, dpi=100):
+    def __init__(self, parent=None, data=None):
         self.parent=parent
+        #fig = Figure(figsize=(width, height), dpi=dpi)
+        #self.axes = fig.add_subplot(111)
+        #data.plotData(self.axes)
+        
+        #super(ResultWindow, self).__init__(fig)
+        super(ResultWindow, self).__init__()
+        self.setWindowTitle(data.data_type)
+        sc = FigureCanvas(data=data, width=5, height=4, dpi=100)
+        data.plotData(sc.axes)
+        self.setCentralWidget(sc)
+        self.show()
+        
+    def event(self, event):
+        if event.type() == QtCore.QEvent.WindowActivate:
+            MainWindow.on_window_activated(self)
+        return False
+    
+class FigureCanvas(FigureCanvasQTAgg):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
-        data.plotData(self.axes)
-        super(ResultWindow, self).__init__(fig)
-   
-    
+        super(FigureCanvas, self).__init__(fig)
+
     
