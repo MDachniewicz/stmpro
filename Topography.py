@@ -17,6 +17,7 @@ class Topography(STMData):
         self.parameters=mtrx.parameter
         self.X=mtrx.x
         self.Y=mtrx.y
+        self.filename=mtrx.file
         if ax==0:
             self.Z=mtrx.imageForwUp
             self.name='Topography Image Forward-Up ' + mtrx.file
@@ -35,3 +36,7 @@ class Topography(STMData):
             ax.axis('equal')
             plt.colorbar(im, cax=cax)
             
+    def level_linewise(self):
+        for i in range(self.Z.shape[0]):
+            a,b=np.linalg.lstsq(np.vstack([self.X[i,:], np.ones(len(self.X[i,:]))]).T,self.Z[i,:],rcond=None)[0]
+            self.Z[i,:]=self.Z[i,:]-self.X[i,:]*a-b
