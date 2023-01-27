@@ -36,7 +36,19 @@ class Topography(STMData):
             ax.axis('equal')
             plt.colorbar(im, cax=cax)
             
+    def XYZ(self):
+        return np.hstack([self.X.reshape(-1,1), self.Y.reshape(-1,1), self.Z.reshape(-1,1)])
+    
+    def saveXYZ(self, filename = None):
+        if filename == None:
+            filename=self.filename+'.XYZ'
+        XYZ=self.XYZ()
+        np.savetxt(filename, XYZ)
+        
+            
     def level_linewise(self):
         for i in range(self.Z.shape[0]):
             a,b=np.linalg.lstsq(np.vstack([self.X[i,:], np.ones(len(self.X[i,:]))]).T,self.Z[i,:],rcond=None)[0]
             self.Z[i,:]=self.Z[i,:]-self.X[i,:]*a-b
+            
+            

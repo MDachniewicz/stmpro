@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
         fileMenu = QMenu("&File", self)
         menuBar.addMenu(fileMenu)
         fileMenu.addAction(self.openAction)
-        fileMenu.addAction(self.saveAction)
+        fileMenu.addAction(self.saveXYZAction)
         fileMenu.addAction(self.exitAction)
 
         # Creating menus using a title
@@ -58,7 +58,7 @@ class MainWindow(QMainWindow):
         # Creating action using the first constructor
         # Creating actions using the second constructor
         self.openAction = QAction("&Open...", self)
-        self.saveAction = QAction("&Save", self)
+        self.saveXYZAction = QAction("&Save XYZ", self)
         self.exitAction = QAction("&Exit", self)
         
         self.levelAction = QAction("&Level", self)
@@ -68,9 +68,11 @@ class MainWindow(QMainWindow):
         
     def _connectActions(self):
         self.openAction.triggered.connect(self.openFile)
+        self.saveXYZAction.triggered.connect(self.saveXYZFile)
         self.exitAction.triggered.connect(self.exitFile)
         self.levelAction.triggered.connect(self.levelEdit)
         self.aboutAction.triggered.connect(self.aboutHelp)
+        
 
     def openResultWindow(self, result):
         win = ResultWindow(data=result, parent = self)
@@ -79,9 +81,16 @@ class MainWindow(QMainWindow):
                 
     def openFile(self):
         options = QFileDialog.Options()
-        files, _ = QFileDialog.getOpenFileNames(self,"QFileDialog.getOpenFileNames()", "","All Files (*);;Python Files (*.py)", options=options)
+        files, _ = QFileDialog.getOpenFileNames(self,"QFileDialog.getOpenFileNames()", "","Z Matrix Files (*.Z_mtrx)", options=options)
         data=GUIUtils.NewFile(files)
         self.openResultWindow(data)
+        
+    def saveXYZFile(self):
+        
+        file, _ = QFileDialog.getSaveFileName(self)
+        print(file)
+        self.resultsWindows[self.active_result_window].data.saveXYZ(os.path.split(file)[1])
+        print('Save clicked')
         
     def exitFile(self):
         self.close()    
