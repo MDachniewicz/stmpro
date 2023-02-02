@@ -9,14 +9,19 @@ import matrixFileHandling as mfh
 import Topography
 
 
-def NewFile(files):
+def NewFile(file):
+    mtrx = mfh.Matrix(file)
+    if mtrx.filetype == 'Z':
+        result = Topography.Topography(datatype='mtrx', data=mtrx)
+                
+    return result
+
+    
+def NewFileXYZ(files):
     for x in files:
         mtrx = mfh.Matrix(x)
         if mtrx.filetype == 'Z':
             result = Topography.Topography(mtrx)
-        mtrx.show()
+        
             
-    return result
-
-    
-    
+    return result    

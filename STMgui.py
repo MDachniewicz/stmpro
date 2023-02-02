@@ -5,15 +5,13 @@ Created on Wed Jun 29 13:41:45 2022
 @author: marek
 """
 
-import sys, os, copy
+import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMessageBox, QLineEdit, QButtonGroup, QRadioButton, QMenu, QAction, QFileDialog,QLabel, QVBoxLayout, QWidget)
-from PyQt5 import QtCore, QtWidgets, QtGui
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
+from PyQt5 import QtCore, QtWidgets
 
-import GUIUtils
-import matrixFileHandling as matrix
-#import ResultWindow
+
+import Utils
+from ResultWindow import ResultWindow
 
 
 class MainWindow(QMainWindow):
@@ -82,7 +80,14 @@ class MainWindow(QMainWindow):
     def openFile(self):
         options = QFileDialog.Options()
         files, _ = QFileDialog.getOpenFileNames(self,"QFileDialog.getOpenFileNames()", "","Z Matrix Files (*.Z_mtrx)", options=options)
-        data=GUIUtils.NewFile(files)
+        for file in files:
+            data=Utils.NewFile(file)
+            self.openResultWindow(data)
+        
+    def openFileXYZ(self):
+        options = QFileDialog.Options()
+        files, _ = QFileDialog.getOpenFileNames(self,"QFileDialog.getOpenFileNames()", "","Z Matrix Files (*.xyz)", options=options)
+        data=Utils.NewFileXYZ(files)
         self.openResultWindow(data)
         
     def saveXYZFile(self):
@@ -96,7 +101,6 @@ class MainWindow(QMainWindow):
         self.close()    
 
     def levelEdit(self):
-        print(self.resultsWindows[self.active_result_window])
         data = self.resultsWindows[self.active_result_window].data
         data.level_linewise()
         self.openResultWindow(data)
@@ -144,7 +148,7 @@ class MainWindow(QMainWindow):
             print("Aktywne okno: Brak")
                     
 
-        
+'''      
 class ResultWindow(QMainWindow):
 
 
@@ -172,5 +176,5 @@ class FigureCanvas(FigureCanvasQTAgg):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
         super(FigureCanvas, self).__init__(fig)
-
+'''
     
