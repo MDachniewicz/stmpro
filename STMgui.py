@@ -26,7 +26,7 @@ class MainWindow(QMainWindow):
         self.resultsWindows = []
         self.a=1
         self.active_result_window=None
-        self.active_result_window= None
+        
         
         
     def setupUi(self, MainWindow):
@@ -153,33 +153,6 @@ class MainWindow(QMainWindow):
             print("Aktywne okno: Brak")
                     
 
-'''      
-class ResultWindow(QMainWindow):
-
-
-    def __init__(self, data=None, parent=None, width=5, height=4, dpi=100):
-        self.parent=parent
-        self.data=data
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        data.plotData(self.axes)
-        super(ResultWindow, self).__init__()
-        self.setWindowTitle(data.filename)
-        
-        sc = FigureCanvas(width=5, height=4, dpi=100)
-        data.plotData(sc.axes)
-        self.setCentralWidget(sc)
-        self.show()
-        
-    def event(self, event):
-        if event.type() == QtCore.QEvent.WindowActivate:
-            self.parent.on_window_activated(self)
-        return False
-    
-class FigureCanvas(FigureCanvasQTAgg):
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        super(FigureCanvas, self).__init__(fig)
-'''
-    
+    def close_result(self, window):
+        self.active_result_window = None
+        self.resultsWindows.pop(self.resultsWindows.index(window))

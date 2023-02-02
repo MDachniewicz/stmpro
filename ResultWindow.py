@@ -34,6 +34,9 @@ class ResultWindow(QMainWindow):
     def event(self, event):
         if event.type() == QtCore.QEvent.WindowActivate:
             self.parent.on_window_activated(self)
+        if event.type() == QtCore.QEvent.Close:
+            print("Close clicked")
+            self.parent.close_result(self)
         return False
     
 class FigureCanvas(FigureCanvasQTAgg):
