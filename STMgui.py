@@ -24,7 +24,6 @@ class MainWindow(QMainWindow):
         self._connectActions()
         
         self.resultsWindows = []
-        self.a=1
         self.active_result_window=None
         
         
@@ -38,7 +37,6 @@ class MainWindow(QMainWindow):
          
     def _createMenuBar(self):
         menuBar = self.menuBar()
-        # Creating menus using a QMenu object
         fileMenu = QMenu("&File", self)
         menuBar.addMenu(fileMenu)
         fileMenu.addAction(self.openAction)
@@ -46,7 +44,6 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(self.saveXYZAction)
         fileMenu.addAction(self.exitAction)
 
-        # Creating menus using a title
         editMenu = menuBar.addMenu("&Edit")
         menuBar.addMenu(editMenu)
         editMenu.addAction(self.levelAction)
@@ -54,8 +51,6 @@ class MainWindow(QMainWindow):
         helpMenu.addAction(self.aboutAction)
         
     def _createActions(self):
-        # Creating action using the first constructor
-        # Creating actions using the second constructor
         self.openAction = QAction("&Open mtrx...", self)
         self.openXYZAction = QAction("&Open XYZ...", self)
         self.saveXYZAction = QAction("&Save XYZ", self)
@@ -103,7 +98,9 @@ class MainWindow(QMainWindow):
         print('Save clicked')
         
     def exitFile(self):
-        self.close()    
+        self.close()  
+        QtWidgets.qApp.quit()
+          
 
     def levelEdit(self):
         data = self.resultsWindows[self.active_result_window].data
@@ -113,7 +110,7 @@ class MainWindow(QMainWindow):
     def aboutHelp(self):
         QtWidgets.QMessageBox.question(self,
         "About",
-        "STMpro 0.0.1 test preview",
+        "STMpro 0.0.2 test preview",
         QtWidgets.QMessageBox.Ok)
         
     def event(self, event):
@@ -128,15 +125,12 @@ class MainWindow(QMainWindow):
             event.ignore()
             if answer == QtWidgets.QMessageBox.Yes:
                 event.accept()
-                for window in self.resultsWindows:
-                    window.close()
+                for x in range(len(self.resultsWindows)):
+                    self.resultsWindows.pop()
+                    
         return False
     
 
-         
-#    def keyPressEvent(self, e): 
-#        if e.key() == QtCore.Qt.Key_Escape:
-#            self.close()
     def setActiveWindow(self, window):  
         self.active_result_window = self.resultsWindows.index(window)
         
