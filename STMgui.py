@@ -42,6 +42,7 @@ class MainWindow(QMainWindow):
         fileMenu = QMenu("&File", self)
         menuBar.addMenu(fileMenu)
         fileMenu.addAction(self.openAction)
+        fileMenu.addAction(self.openXYZAction)
         fileMenu.addAction(self.saveXYZAction)
         fileMenu.addAction(self.exitAction)
 
@@ -55,7 +56,8 @@ class MainWindow(QMainWindow):
     def _createActions(self):
         # Creating action using the first constructor
         # Creating actions using the second constructor
-        self.openAction = QAction("&Open...", self)
+        self.openAction = QAction("&Open mtrx...", self)
+        self.openXYZAction = QAction("&Open XYZ...", self)
         self.saveXYZAction = QAction("&Save XYZ", self)
         self.exitAction = QAction("&Exit", self)
         
@@ -66,6 +68,7 @@ class MainWindow(QMainWindow):
         
     def _connectActions(self):
         self.openAction.triggered.connect(self.openFile)
+        self.openXYZAction.triggered.connect(self.openXYZFile)
         self.saveXYZAction.triggered.connect(self.saveXYZFile)
         self.exitAction.triggered.connect(self.exitFile)
         self.levelAction.triggered.connect(self.levelEdit)
@@ -84,11 +87,13 @@ class MainWindow(QMainWindow):
             data=Utils.NewFile(file)
             self.openResultWindow(data)
         
-    def openFileXYZ(self):
+    def openXYZFile(self):
         options = QFileDialog.Options()
         files, _ = QFileDialog.getOpenFileNames(self,"QFileDialog.getOpenFileNames()", "","Z Matrix Files (*.xyz)", options=options)
-        data=Utils.NewFileXYZ(files)
-        self.openResultWindow(data)
+        shape=[512, 512]
+        for file in files:
+            data=Utils.NewFileXYZ(file, shape)
+            self.openResultWindow(data)
         
     def saveXYZFile(self):
         

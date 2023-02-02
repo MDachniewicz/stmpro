@@ -4,34 +4,40 @@ Created on Thu Jan 26 22:17:12 2023
 
 @author: marek
 """
-
-import sys
 import matplotlib
-matplotlib.use('Qt5Agg')
-
-from PyQt5 import QtCore, QtWidgets
-
+matplotlib.use('Agg')
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
+from PyQt5.QtWidgets import QMainWindow
+from PyQt5 import QtCore
 
-class MplCanvas(FigureCanvasQTAgg):
 
+
+class ResultWindow(QMainWindow):
+
+
+    def __init__(self, data=None, parent=None, width=5, height=4, dpi=100):
+        self.parent=parent
+        self.data=data
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        data.plotData(self.axes)
+        super(ResultWindow, self).__init__()
+        self.setWindowTitle(data.filename)
+        
+        sc = FigureCanvas(width=5, height=4, dpi=100)
+        data.plotData(sc.axes)
+        self.setCentralWidget(sc)
+        self.show()
+        
+    def event(self, event):
+        if event.type() == QtCore.QEvent.WindowActivate:
+            self.parent.on_window_activated(self)
+        return False
+    
+class FigureCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
-        super(MplCanvas, self).__init__(fig)
-
-
-class ResultWindow(QtWidgets.QMainWindow):
-
-    def __init__(self, *args, **kwargs):
-        super(ResultWindow, self).__init__(*args, **kwargs)
-
-        # Create the maptlotlib FigureCanvas object,
-        # which defines a single set of axes as self.axes.
-        sc = MplCanvas(self, width=5, height=4, dpi=100)
-        sc.axes.plot([0,1,2,3,4], [10,1,20,3,40])
-        self.setCentralWidget(sc)
-
-        self.show()
+        super(FigureCanvas, self).__init__(fig)

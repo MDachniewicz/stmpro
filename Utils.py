@@ -8,6 +8,8 @@ Created on Thu Jan 26 21:36:07 2023
 import matrixFileHandling as mfh
 import Topography
 
+import numpy as np
+
 
 def NewFile(file):
     mtrx = mfh.Matrix(file)
@@ -17,11 +19,27 @@ def NewFile(file):
     return result
 
     
-def NewFileXYZ(files):
-    for x in files:
-        mtrx = mfh.Matrix(x)
-        if mtrx.filetype == 'Z':
-            result = Topography.Topography(mtrx)
+def NewFileXYZ(filename,shape):
+    X=[]
+    Y=[]
+    Z=[]
+        
+    
+    with open(filename, "r") as file:
+        for line in file:
+            x,y,z = line.split()
+            X.append(float(x))
+            Y.append(float(y))
+            Z.append(float(z))
+    X=np.array(X)
+    X=np.reshape(X, shape)
+    Y=np.array(Y)
+    Y=np.reshape(Y, shape)
+    Z=np.array(Z)
+    Z=np.reshape(Z, shape)
+    
+    data=[X,Y,Z, filename]
+    result = Topography.Topography(datatype='xyz', data=data)
         
             
     return result    

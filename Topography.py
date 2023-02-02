@@ -16,7 +16,7 @@ class Topography(STMData):
         if datatype=='mtrx':
             self.__initMtrx(data, ax)
         if datatype=='xyz':
-            self.__initXYZ(filename=data)
+            self.__initXYZ(data)
         
             
     def __initMtrx(self, mtrx, ax=0):
@@ -36,9 +36,10 @@ class Topography(STMData):
             self.Z=mtrx.imageBackDown 
             
     def __initXYZ(self, data):
-        self.X=data.X
-        self.Y=data.Y
-        self.Z=data.Z
+        self.X=data[0]
+        self.Y=data[1]
+        self.Z=data[2]
+        self.filename=data[3]
             
     def plotData(self, ax=None):
         if ax:
