@@ -17,14 +17,15 @@ from PyQt5 import QtCore
 class ResultWindow(QMainWindow):
 
 
-    def __init__(self, data=None, parent=None, width=5, height=4, dpi=100):
+    def __init__(self, data=None, parent=None, width=5, height=4, dpi=100, name=None):
         self.parent=parent
         self.data=data
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
         data.plotData(self.axes)
         super(ResultWindow, self).__init__()
-        self.setWindowTitle(data.filename)
+        if name==None:
+            self.setWindowTitle(data.filename)
         
         sc = FigureCanvas(width=5, height=4, dpi=100)
         data.plotData(sc.axes)

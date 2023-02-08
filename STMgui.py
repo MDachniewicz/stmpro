@@ -79,8 +79,19 @@ class MainWindow(QMainWindow):
         options = QFileDialog.Options()
         files, _ = QFileDialog.getOpenFileNames(self,"QFileDialog.getOpenFileNames()", "","Z Matrix Files (*.Z_mtrx)", options=options)
         for file in files:
-            data=Utils.NewFile(file)
-            self.openResultWindow(data)
+            try:
+                data=Utils.NewFile(file)
+                self.openResultWindow(data)
+            except FileNotFoundError as e:
+                print(e)
+                if e.args[0] == "NoHeader":
+                    
+                    QtWidgets.QMessageBox.question(self,
+                    "Error",
+                    "No header file (\"_0001.mtrx\") found.",
+                    QtWidgets.QMessageBox.Ok)
+            
+            
         
     def openXYZFile(self):
         options = QFileDialog.Options()
@@ -99,7 +110,7 @@ class MainWindow(QMainWindow):
         
     def exitFile(self):
         self.close()  
-        QtWidgets.qApp.quit()
+        
           
 
     def levelEdit(self):
@@ -110,7 +121,7 @@ class MainWindow(QMainWindow):
     def aboutHelp(self):
         QtWidgets.QMessageBox.question(self,
         "About",
-        "STMpro 0.0.2 test preview",
+        "STMpro 0.0.3 pre-alpha",
         QtWidgets.QMessageBox.Ok)
         
     def event(self, event):

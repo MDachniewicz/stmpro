@@ -7,16 +7,20 @@ Created on Thu Jan 26 21:36:07 2023
 
 import matrixFileHandling as mfh
 import Topography
+#import Exceptions
 
 import numpy as np
 
 
 def NewFile(file):
+
     mtrx = mfh.Matrix(file)
     if mtrx.filetype == 'Z':
         result = Topography.Topography(datatype='mtrx', data=mtrx)
-                
-    return result
+    return result        
+    
+    
+    
 
     
 def NewFileXYZ(filename,shape):
