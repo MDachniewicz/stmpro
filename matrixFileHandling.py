@@ -26,6 +26,9 @@ class Matrix():
     imageBackUp = []
     imageForwDown = []
     imageBackDown = []
+    V = None
+    currentForw = None
+    currentBack = None
     parameter = {'BREF': ''}
     parameter['XFER'] = {}
     parameter['DICT'] = {}
@@ -39,10 +42,119 @@ class Matrix():
         self.set_file_type()
         if (self.filetype == 'Z'):
             self.openTopoData()
+        if (self.filetype == 'I'):
+            self.openTopoData()
+        if (self.filetype == 'I(V)-curve'):
+            self.openCurveData()
+        if (self.filetype == 'I(V)-map'):
+            self.openMapData()
+    
+    def openMapData(self):
+        f = open(self.file, mode='r+b')
+        if f.read(12).decode() != 'ONTMATRX0101':
+            print("Błędny plik z danymi.")
 
-    def openIVData(self):
-        pass
+        datatag = f.read(4).decode()
+        while len(datatag) == 4:
+            if datatag == 'TLKB':
+                f.read(4) #filesize
+                self.timestamp = dt.fromtimestamp(unpack('<L', f.read(4))[0])
+                f.read(8)
+            if datatag == 'CSED':
+                blocksize = unpack('<i', f.read(4))[0]
+                f.read(blocksize) # desc
+            if datatag == 'ATAD':
+                datasize = unpack('<i', f.read(4))[0]
+                data = f.read(datasize)
 
+            try:
+                datatag = f.read(4).decode()
+            except:
+                datatag = ""
+        f.close()
+
+        dataformat = '<%di' % int(datasize / 4)
+
+        self.data = np.array(unpack(dataformat, data))
+        self.scale_data()
+        self._reshapeMapData()
+
+    def _reshapeMapData(self):
+        points = self.parameter['XYScanner.Points'][0]
+        subgridx = self.parameter['XYScanner.Subgrid_X'][0]
+        xpoints = int(np.ceil(points/subgridx))
+        lines = self.parameter['XYScanner.Lines'][0]
+        subgridy = self.parameter['XYScanner.Subgrid_Y'][0]
+        ypoints = int(np.ceil(lines/subgridy))
+        vpoints = self.parameter['Spectroscopy.Device_1_Points'][0]
+        rampReversal =self.parameter['Spectroscopy.Enable_Device_1_Ramp_Reversal'][0]
+        if self.filetype == 'I(V)-map' and not rampReversal:
+                expectedNumOfPoints=xpoints*ypoints*vpoints
+                if self.data.size < expectedNumOfPoints:
+                    self.fill_data(expectedNumOfPoints)
+                self.currentForw = self.data.reshape(xpoints, ypoints, vpoints)    
+        if self.filetype == 'I(V)-map' and rampReversal:
+                expectedNumOfPoints=xpoints*ypoints*vpoints*2
+                if self.data.size < expectedNumOfPoints:
+                    self.fill_data(expectedNumOfPoints)
+                data = self.data.reshape(-1, vpoints)
+                dataForw = data[::2]
+                dataBack = data[1::2]
+                
+                self.currentForw = dataForw.reshape(xpoints, ypoints, vpoints)
+                self.currentBack = dataBack.reshape(xpoints, ypoints, vpoints)
+                self.currentBack = self.currentBack[:,:,::-1]
+    
+    def openCurveData(self):
+        f = open(self.file, mode='r+b')
+        if f.read(12).decode() != 'ONTMATRX0101':
+            print("Błędny plik z danymi.")
+
+        datatag = f.read(4).decode()
+        while len(datatag) == 4:
+            if datatag == 'TLKB':
+                f.read(4) #filesize
+                self.timestamp = dt.fromtimestamp(unpack('<L', f.read(4))[0])
+                f.read(8)
+            if datatag == 'CSED':
+                blocksize = unpack('<i', f.read(4))[0]
+                f.read(blocksize) # desc
+            if datatag == 'ATAD':
+                datasize = unpack('<i', f.read(4))[0]
+                data = f.read(datasize)
+
+            try:
+                datatag = f.read(4).decode()
+            except:
+                datatag = ""
+        f.close()
+
+        dataformat = '<%di' % int(datasize / 4)
+
+        self.data = np.array(unpack(dataformat, data))
+        self.scale_data()
+        self._processCurve()
+        
+    def _processCurve(self):
+        rampReversal =self.parameter['Spectroscopy.Enable_Device_1_Ramp_Reversal'][0]
+        vstart = self.parameter['Spectroscopy.Device_1_Start'][0]
+        vend = self.parameter['Spectroscopy.Device_1_End'][0]
+        vpoints = self.parameter['Spectroscopy.Device_1_Points'][0]
+        
+        if self.filetype == 'I(V)-curve' or self.filetype == 'I(V)-map':            
+            if self.filetype == 'I(V)-curve' and not rampReversal:
+                if self.data.size < vpoints:
+                    self.fill_data(vpoints)
+                self.currentForw = self.data
+            if self.filetype == 'I(V)-curve' and rampReversal:
+                if self.data.size < 2*vpoints:
+                    self.fill_data(2*vpoints)
+                self.currentForw = self.data[:vpoints]
+                self.currentBack = self.data[:vpoints-1:-1]
+            
+            self.V = np.linspace(vstart,vend,vpoints)
+        
+            
     def openIZData(self):
         pass
 
@@ -50,28 +162,22 @@ class Matrix():
         f = open(self.file, mode='r+b')
         if f.read(12).decode() != 'ONTMATRX0101':
             print("Błędny plik z danymi.")
-
         datatag = f.read(4).decode()
         while len(datatag) == 4:
-
             if datatag == 'TLKB':
-                file_size = unpack('<i', f.read(4))[0]
+                f.read(4) #filesize
                 self.timestamp = dt.fromtimestamp(unpack('<L', f.read(4))[0])
                 f.read(8)
-
             if datatag == 'CSED':
                 blocksize = unpack('<i', f.read(4))[0]
-                csed = f.read(blocksize)
-
+                f.read(blocksize) # desc
             if datatag == 'ATAD':
                 datasize = unpack('<i', f.read(4))[0]
                 data = f.read(datasize)
 
             try:
                 datatag = f.read(4).decode()
-                # print(datatag)
             except:
-                print("Koniec pliku")
                 datatag = ""
         f.close()
 
@@ -81,14 +187,20 @@ class Matrix():
         self.scale_data()
         self.reshape_data()
 
+
     def set_file_type(self):
         filename, file_extension = os.path.splitext(self.file)
         if file_extension == '.Z_mtrx':
             self.filetype = 'Z'
-
+        if file_extension == '.I_mtrx':
+            self.filetype = 'I'
+        if file_extension == '.I(V)_mtrx' and self.parameter['XYScanner.Enable_Subgrid'][0]==False:
+            self.filetype = 'I(V)-curve'
+        if file_extension == '.I(V)_mtrx' and self.parameter['XYScanner.Enable_Subgrid'][0]==True:
+            self.filetype = 'I(V)-map'
+                        
     # Calculate physical values
     def scale_data(self):
-
         for key in self.parameter['DICT'].keys():
             if self.parameter['DICT'][key][0] == self.filetype:
                 break
@@ -98,15 +210,16 @@ class Matrix():
             self.data = (self.data - self.parameter["XFER"][key][2]['Factor']) / self.parameter["XFER"][key][2][
                 'Factor']
         else:
-            self.data = (self.parameter["XFER"][key][2]['Raw_1'] - self.parameter["XFER"][key][2]['PreOffset']) * \
+            self.data = (self.parameter["XFER"][key][2]['Raw_1'][0] - self.parameter["XFER"][key][2]['PreOffset'][0]) * \
                         (self.data - self.parameter["XFER"][key][2]['Offset']) / (
-                                self.parameter["XFER"][key][2]['NeutralFactor'] * \
-                                self.parameter["XFER"][key][2]['PreFactor'])
-        width = self.parameter['XYScanner.Width'][0]
-        height = self.parameter['XYScanner.Height'][0]
-        points = self.parameter['XYScanner.Points'][0]
-        lines = self.parameter['XYScanner.Lines'][0]
-        self.x, self.y = np.meshgrid(np.linspace(0, width, points), np.linspace(0, height, lines))
+                                self.parameter["XFER"][key][2]['NeutralFactor'][0] * \
+                                self.parameter["XFER"][key][2]['PreFactor'][0])
+        #width = self.parameter['XYScanner.Width'][0]
+        #height = self.parameter['XYScanner.Height'][0]
+        #points = self.parameter['XYScanner.Points'][0]
+        #lines = self.parameter['XYScanner.Lines'][0]
+        #self.x, self.y = np.meshgrid(np.linspace(0, width, points), np.linspace(0, height, lines))
+
 
     def findImageAxes(self):
         if self.parameter['XYScanner.X_Retrace'][0] == True:
@@ -115,10 +228,14 @@ class Matrix():
             self.axes[0][1] = 1
         if self.parameter['XYScanner.X_Retrace'][0] == True and self.parameter['XYScanner.Y_Retrace'][0] == True:
             self.axes[1][1] = 1
-
+    
+    # Reshaping data to rectangular arrays (points x lines)
     def reshape_data(self):
+        width = self.parameter['XYScanner.Width'][0]
+        height = self.parameter['XYScanner.Height'][0]
         lines = self.parameter['XYScanner.Lines'][0]
         points = self.parameter['XYScanner.Points'][0]
+        self.x, self.y = np.meshgrid(np.linspace(0, width, points), np.linspace(0, height, lines))
         self.findImageAxes()
 
         expFileSize = sum(sum(self.axes, [])) * self.parameter['XYScanner.Lines'][0] * \
@@ -149,7 +266,6 @@ class Matrix():
 
     # Reading .mtrx header containing measurement parameters
     def openHeader(self):
-
         try:
             f = open(self.header, mode='r+b')
 
@@ -158,7 +274,7 @@ class Matrix():
 
             datatag = f.read(4).decode()
 
-            while len(datatag) == 4 and self.parameter['BREF'] != self.file:
+            while len(datatag) == 4 and self.parameter['BREF'] != os.path.split(self.file)[-1]:
                 # print(datatag)
                 if datatag == 'ATEM':
                     blocksize = unpack('<i', f.read(4))[0]
@@ -186,7 +302,7 @@ class Matrix():
 
                 elif datatag == 'APEE':
                     block_size = unpack('<i', f.read(4))[0]
-                    date = unpack('<L', f.read(4))[0]  # date
+                    self.date = unpack('<L', f.read(4))[0]  # date
                     f.read(4)
                     apee = f.read(block_size)
                     num_parameters_groups = unpack('<i', apee[4:8])[0]  # ilosc grup parametrow
@@ -218,13 +334,13 @@ class Matrix():
                 elif datatag == 'ICNI' or datatag == 'WEIV' or datatag == 'CORP':
 
                     blocksize = unpack('<i', f.read(4))[0]
-                    date = unpack('<L', f.read(4))[0]  # date
+                    f.read(4)  # date
                     f.read(4)
                     f.read(blocksize)
 
                 elif datatag == 'YSCC':
                     main_block_size = unpack('<i', f.read(4))[0]
-                    date = unpack('<L', f.read(4))[0]  # date
+                    f.read(4)  # date
                     f.read(4)
                     yscc = f.read(main_block_size)
                     x = 4
@@ -238,7 +354,7 @@ class Matrix():
                         while (x - x0) < blocksize:
                             if datatag == 'REFX':
 
-                                size1 = unpack('<i', yscc[x:x + 4])[0]  # blocksize
+                                #size1 = unpack('<i', yscc[x:x + 4])[0]  # blocksize
                                 x += 4
                                 group_number = unpack('<i', yscc[x:x + 4])[0]
                                 x += 4
@@ -312,7 +428,7 @@ class Matrix():
 
                 elif datatag == 'FERB':
                     blocksize = unpack('<i', f.read(4))[0]
-                    date = unpack('<L', f.read(4))[0]  # date
+                    f.read(4)  # date
                     f.read(4)
                     ferb = f.read(blocksize)
                     size = unpack('<i', ferb[4:8])[0]
@@ -320,7 +436,7 @@ class Matrix():
 
                 elif datatag == 'DOMP':
                     blocksize = unpack('<i', f.read(4))[0]
-                    date = unpack('<L', f.read(4))[0]  # date
+                    f.read(4)  # date
                     f.read(4)
                     domp = f.read(blocksize)
                     x = 4
@@ -343,7 +459,7 @@ class Matrix():
 
                 elif datatag == 'KRAM':
                     blocksize = unpack('<i', f.read(4))[0]
-                    date = unpack('<L', f.read(4))[0]  # date
+                    f.read(4)  # date
                     f.read(4)
                     kram = f.read(blocksize)
                     size = unpack('<i', kram[0:4])[0]
@@ -352,25 +468,26 @@ class Matrix():
                 try:
                     datatag = f.read(4).decode()
                 except:
-                    # print("End of File")
                     datatag = ""
 
             f.close()
         except FileNotFoundError:
             raise FileNotFoundError('NoHeader')
 
+    # Reading data from data blocks
     def readData(self, datablock, offset):
 
         if datablock[offset:offset + 4].decode() == 'LOOB':
             offset += 4
             data = bool(unpack('<L', datablock[offset:offset + 4])[0])
             offset += 4
+
         elif datablock[offset:offset + 4].decode() == 'GNOL':
             offset += 4
             data = unpack('<l', datablock[offset:offset + 4])[0]
             offset += 4
-        elif datablock[offset:offset + 4].decode() == 'BUOD':
 
+        elif datablock[offset:offset + 4].decode() == 'BUOD':
             offset += 4
             data = unpack('<d', datablock[offset:offset + 8])[0]
             offset += 8
@@ -385,13 +502,12 @@ class Matrix():
         return data, offset
 
     def findHeader(self, filename):
-
         self.header = filename[:filename.rfind('--')] + "_0001.mtrx"
 
     def __repr__(self):
         return 'File: ' + self.parameter['BREF']
-
-    def show(self):
+    
+    def _plotTopo(self):
         ax = plt.subplot()
         im = ax.pcolor(self.x * 10 ** 9, self.y * 10 ** 9, self.imageForwUp)
         divider = make_axes_locatable(ax)
@@ -400,7 +516,25 @@ class Matrix():
         plt.colorbar(im, cax=cax)
         plt.show()
         # plt.imshow(self.imageForwUp, origin = 'lower')
+        
+    def _plotCurve(self):
+        ax = plt.subplot()
+        if self.currentBack.any():
+            ax.plot(self.V, self.currentForw * 10 ** 9, self.V, self.currentBack * 10 ** 9)
+        else:
+            ax.plot(self.V, self.currentForw * 10 ** 9)
+        plt.show()
+        # plt.imshow(self.imageForwUp, origin = 'lower')
+    
+    def show(self):
+        if self.filetype == 'Z' or self.filetype == 'I':
+            self._plotTopo()
+        if self.filetype == 'I(V)-curve' or self.filetype == 'I(Z)-curve':
+            self._plotCurve()
+        
 
 if __name__ == "__main__":
-    mtrx = Matrix("Si(553)-PbSb--51_1.Z_mtrx")
+    #mtrx = Matrix("test_files/Si(553)-AuSb--8_1.I(V)_mtrx")
+    mtrx = Matrix("test_files/Si(553)_Au_krakerSb--1_1.I(V)_mtrx")
+    #mtrx = Matrix("test_files/Si(111)-6x6 + 140Hz Au--4_1.Z_mtrx")
     mtrx.show()

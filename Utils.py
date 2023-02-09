@@ -15,7 +15,7 @@ import numpy as np
 def NewFile(file):
 
     mtrx = mfh.Matrix(file)
-    if mtrx.filetype == 'Z':
+    if mtrx.filetype == 'Z' or mtrx.filetype == 'I':
         result = Topography.Topography(filetype='mtrx', data=mtrx)
     return result        
     

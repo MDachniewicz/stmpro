@@ -75,7 +75,7 @@ class MainWindow(QMainWindow):
 
     def openFile(self):
         options = QFileDialog.Options()
-        files, _ = QFileDialog.getOpenFileNames(self, "QFileDialog.getOpenFileNames()", "", "Z Matrix Files (*.Z_mtrx)",
+        files, _ = QFileDialog.getOpenFileNames(self, "QFileDialog.getOpenFileNames()", "", "Z Matrix Files (*.Z_mtrx);;I Matrix Files (*.I_mtrx)",
                                                 options=options)
         for file in files:
             try:
@@ -88,10 +88,10 @@ class MainWindow(QMainWindow):
                                                    "Error",
                                                    "No header file (\"_0001.mtrx\") found.",
                                                    QtWidgets.QMessageBox.Ok)
-
+    # Functions 
     def openXYZFile(self):
         options = QFileDialog.Options()
-        files, _ = QFileDialog.getOpenFileNames(self, "QFileDialog.getOpenFileNames()", "", "Z Matrix Files (*.xyz)",
+        files, _ = QFileDialog.getOpenFileNames(self, "QFileDialog.getOpenFileNames()", "", ".xyz Files (*.xyz)",
                                                 options=options)
         ret, points, lines = self.getXYZsize()
         if ret == False:
@@ -127,8 +127,7 @@ class MainWindow(QMainWindow):
         inputs.append(input_lines)
         dialog.layout().insertWidget(0, input_points)
         dialog.layout().insertWidget(1, input_lines)
-        #points = int(input_points.text()) if input_points.text() else 512
-        #lines = int(input_lines.text()) if input_lines.text() else 512
+        
         
         ret = dialog.exec_() == QtWidgets.QDialog.Accepted
         return ret, int(input_points.text()), int(input_lines.text())

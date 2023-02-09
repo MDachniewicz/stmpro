@@ -10,7 +10,8 @@ class STMData:
     parameters={}
     comment={}
     data_type=None
-
+    unit=None
+    
     def __init__(self):
         pass
     
