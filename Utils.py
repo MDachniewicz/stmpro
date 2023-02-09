@@ -16,14 +16,14 @@ def NewFile(file):
 
     mtrx = mfh.Matrix(file)
     if mtrx.filetype == 'Z':
-        result = Topography.Topography(datatype='mtrx', data=mtrx)
+        result = Topography.Topography(filetype='mtrx', data=mtrx)
     return result        
     
     
     
 
     
-def NewFileXYZ(filename,shape):
+def NewFileXYZ(filename, shape):
     X=[]
     Y=[]
     Z=[]
@@ -35,6 +35,9 @@ def NewFileXYZ(filename,shape):
             X.append(float(x))
             Y.append(float(y))
             Z.append(float(z))
+    if shape == [0,0]:
+        size=int(len(X)**0.5)
+        shape = [size, size]      
     X=np.array(X)
     X=np.reshape(X, shape)
     Y=np.array(Y)
@@ -43,7 +46,7 @@ def NewFileXYZ(filename,shape):
     Z=np.reshape(Z, shape)
     
     data=[X,Y,Z, filename]
-    result = Topography.Topography(datatype='xyz', data=data)
+    result = Topography.Topography(filetype='xyz', data=data)
         
             
     return result    
