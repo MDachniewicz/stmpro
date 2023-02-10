@@ -15,7 +15,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 from struct import unpack
 from datetime import datetime as dt
-import os
+import os, re
 
 
 # import Exceptions
@@ -27,8 +27,9 @@ class Matrix():
     imageForwDown = []
     imageBackDown = []
     V = None
-    currentForw = None
-    currentBack = None
+    mtrxRef = None
+    currentForw = np.array([])
+    currentBack = np.array([])
     parameter = {'BREF': ''}
     parameter['XFER'] = {}
     parameter['DICT'] = {}
@@ -134,6 +135,8 @@ class Matrix():
         self.data = np.array(unpack(dataformat, data))
         self.scale_data()
         self._processCurve()
+        self._getReferenceFile()
+        self._openRefFile()
         
     def _processCurve(self):
         rampReversal =self.parameter['Spectroscopy.Enable_Device_1_Ramp_Reversal'][0]
@@ -153,7 +156,40 @@ class Matrix():
                 self.currentBack = self.data[:vpoints-1:-1]
             
             self.V = np.linspace(vstart,vend,vpoints)
-        
+    
+    def _getReferenceFile(self):
+        location=[x for x in self.parameter_marks if x[0:17]=='MTRX$STS_LOCATION'][-1][18:]
+        location=re.split(',|;|%%', location)
+        xloc, yloc, xpos, ypos, ref, _ = location
+        self.xloc, self.yloc = int(xloc), int(yloc)
+        ref=re.split('-',ref)
+        channel_id, bricklet, run_cycle, _ = ref
+        channel = self._channelId2channel(channel_id)
+        self.refFile=self._findRefFile(channel, run_cycle, int(bricklet))        
+                
+    def _channelId2channel(self, channel_id):
+        for x in self.parameter['DICT']:
+            if self.parameter['DICT'][x][2][2:] == channel_id: # Omit 0x when comparing hex numbers
+                return self.parameter['DICT'][x][0]
+    
+    def _findRefFile(self, channel, run_cycle, bricklet):
+        path=os.path.split(self.file)[0]
+        file=os.path.split(self.file)[1]
+        filename_start = file.rsplit('--',1)[0]+'--'+run_cycle
+        filename_end = channel+'_mtrx'
+        for filename in os.listdir(path):
+            if filename.startswith(filename_start) and filename.endswith(filename_end):
+                file=path+os.path.sep+filename
+                f=open(file, mode='r+b')
+                f.read(48)
+                if bricklet == unpack('<b', f.read(1))[0]:
+                    f.close()
+                    return file
+                f.close()
+        return None
+    
+    def _openRefFile(self):
+        self.mtrxRef=Matrix(self.refFile)
             
     def openIZData(self):
         pass
@@ -399,9 +435,7 @@ class Matrix():
                                 for y in range(num_parameters):
                                     x += 4
                                     channel = unpack('<i', yscc[x:x + 4])[0]
-                                    x += 4
-
-                                    x += 8
+                                    x+=12
                                     size = unpack('<i', yscc[x:x + 4])[0]
                                     x += 4
                                     parameter = yscc[x:x + size * 2].decode('utf-16')
@@ -410,10 +444,11 @@ class Matrix():
                                     x += 4
                                     unit = yscc[x:x + size * 2].decode('utf-16')
                                     x += size * 2
-                                    self.parameter['DICT']["DICT_" + str(channel)] = [parameter, unit, '']
+                                    self.parameter['DICT']["DICT_" + str(channel)] = [parameter, unit, '', '']
                                 num_parameters = unpack('<i', yscc[x:x + 4])[0]
                                 x += 4
                                 for i in range(num_parameters):
+                                    channel_id = hex(unpack('<q', yscc[x:x+8])[0])
                                     x += 12
                                     channel = unpack('<i', yscc[x:x + 4])[0]
                                     x += 4
@@ -421,7 +456,8 @@ class Matrix():
                                     x += 4
                                     data = yscc[x:x + size * 2].decode('utf-16')
                                     x += size * 2
-                                    self.parameter['DICT']["DICT_" + str(channel)][2] = data
+                                    self.parameter['DICT']["DICT_" + str(channel)][2] = channel_id
+                                    self.parameter['DICT']["DICT_" + str(channel)][3] = data
 
                             else:
                                 x += blocksize
@@ -507,12 +543,14 @@ class Matrix():
     def __repr__(self):
         return 'File: ' + self.parameter['BREF']
     
-    def _plotTopo(self):
+    def _plotTopo(self, xloc, yloc):
         ax = plt.subplot()
         im = ax.pcolor(self.x * 10 ** 9, self.y * 10 ** 9, self.imageForwUp)
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
         ax.axis('equal')
+        if xloc != None and yloc != None:
+            ax.plot([self.x[yloc,xloc]*10**9],[self.y[yloc,xloc]*10**9],marker='s', markersize=10)
         plt.colorbar(im, cax=cax)
         plt.show()
         # plt.imshow(self.imageForwUp, origin = 'lower')
@@ -525,16 +563,22 @@ class Matrix():
             ax.plot(self.V, self.currentForw * 10 ** 9)
         plt.show()
         # plt.imshow(self.imageForwUp, origin = 'lower')
+        
+    def _plotLoc(self):
+        if self.mtrxRef:
+            self.mtrxRef.show(self.xloc, self.yloc)
+            
     
-    def show(self):
+    def show(self, xloc=None, yloc=None):
         if self.filetype == 'Z' or self.filetype == 'I':
-            self._plotTopo()
+            self._plotTopo(xloc, yloc)
         if self.filetype == 'I(V)-curve' or self.filetype == 'I(Z)-curve':
             self._plotCurve()
+            self._plotLoc()
         
 
 if __name__ == "__main__":
-    #mtrx = Matrix("test_files/Si(553)-AuSb--8_1.I(V)_mtrx")
-    mtrx = Matrix("test_files/Si(553)_Au_krakerSb--1_1.I(V)_mtrx")
+    mtrx = Matrix("test_files/2021-04-08/Si(553)-AuSb--34_9.I(V)_mtrx")
+    #mtrx = Matrix("test_files/Si(553)_Au_krakerSb--3_1.I(V)_mtrx")
     #mtrx = Matrix("test_files/Si(111)-6x6 + 140Hz Au--4_1.Z_mtrx")
     mtrx.show()
