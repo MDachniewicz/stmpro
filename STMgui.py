@@ -23,10 +23,13 @@ class MainWindow(QMainWindow):
         self._createActions()
         self._createMenuBar()
         self._connectActions()
+        
 
         self.resultsWindows = []
         self.active_result_window = None
-
+        
+        self._updateMenu()
+        
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("STMpro")
         MainWindow.setWindowTitle("STMpro")
@@ -69,7 +72,19 @@ class MainWindow(QMainWindow):
         self.aboutAction.triggered.connect(self.aboutHelp)
         
     def _updateMenu(self):
-        pass
+        if self.active_result_window == None:
+            self.levelAction.setDisabled(True)
+            self.saveXYZAction.setDisabled(True)
+        
+        else:
+            active_window = self.resultsWindows[self.active_result_window]
+            if isinstance(active_window, TopographyWindow):
+                self.levelAction.setDisabled(False)
+                self.saveXYZAction.setDisabled(False)
+            if isinstance(active_window, SpectroscopyWindow):
+                self.levelAction.setDisabled(True)
+                self.saveXYZAction.setDisabled(True)
+            
 
     def openResultWindow(self, data, filetype):
         if filetype == 'Z' or filetype == 'I':
@@ -151,7 +166,7 @@ class MainWindow(QMainWindow):
     def aboutHelp(self):
         QtWidgets.QMessageBox.question(self,
                                        "About",
-                                       "STMpro 0.0.3 pre-alpha",
+                                       "STMpro 0.0.4 pre-alpha",
                                        QtWidgets.QMessageBox.Ok)
 
     def event(self, event):
@@ -181,8 +196,9 @@ class MainWindow(QMainWindow):
     def on_window_activated(self, active_window):
         if active_window:
             if isinstance(active_window, ResultWindow):
-                self.active_result_window = self.resultsWindows.index(active_window)
-                print(self.active_result_window)
+                self.setActiveWindow(window=active_window)
+                #self.active_result_window = self.resultsWindows.index(active_window)
+                #print(self.active_result_window)
 
                 # self.setActiveWindow(MainWindow, active_window)
                 #print("Aktywne okno:", active_window.windowTitle())
