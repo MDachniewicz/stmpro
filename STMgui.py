@@ -75,7 +75,9 @@ class MainWindow(QMainWindow):
 
     def openFile(self):
         options = QFileDialog.Options()
-        files, _ = QFileDialog.getOpenFileNames(self, "QFileDialog.getOpenFileNames()", "", "Z Matrix Files (*.Z_mtrx);;I Matrix Files (*.I_mtrx)",
+        files, _ = QFileDialog.getOpenFileNames(self, "QFileDialog.getOpenFileNames()", "", "Z Matrix Files (*.Z_mtrx);;\
+                                                I Matrix Files (*.I_mtrx);;\
+                                                I(V) Matrix Files (*.I*V*_mtrx)",
                                                 options=options)
         for file in files:
             try:

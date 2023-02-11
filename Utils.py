@@ -6,8 +6,8 @@ Created on Thu Jan 26 21:36:07 2023
 """
 
 import matrixFileHandling as mfh
-import Topography
-#import Exceptions
+import Topography, Spectroscopy
+
 
 import numpy as np
 
@@ -17,6 +17,8 @@ def NewFile(file):
     mtrx = mfh.Matrix(file)
     if mtrx.filetype == 'Z' or mtrx.filetype == 'I':
         result = Topography.Topography(filetype='mtrx', data=mtrx)
+    if mtrx.filetype == 'I(V)-curve':
+        result = Spectroscopy.Spectroscopy(data=mtrx)
     return result        
     
     
