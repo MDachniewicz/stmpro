@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (QMainWindow, QMenu,
                              QAction, QFileDialog)
 
 import Utils
-from ResultWindow import ResultWindow
+from ResultWindow import ResultWindow, SpectroscopyWindow, TopographyWindow
 
 
 class MainWindow(QMainWindow):
@@ -67,9 +67,15 @@ class MainWindow(QMainWindow):
         self.exitAction.triggered.connect(self.exitFile)
         self.levelAction.triggered.connect(self.levelEdit)
         self.aboutAction.triggered.connect(self.aboutHelp)
+        
+    def _updateMenu(self):
+        pass
 
-    def openResultWindow(self, result):
-        win = ResultWindow(data=result, parent=self)
+    def openResultWindow(self, data, filetype):
+        if filetype == 'Z' or filetype == 'I':
+            win = TopographyWindow(data=data, parent=self)
+        if filetype == 'I(V)-curve':
+            win = SpectroscopyWindow(data=data, parent=self)
         self.resultsWindows.append(win)
         win.show()
 
@@ -81,8 +87,8 @@ class MainWindow(QMainWindow):
                                                 options=options)
         for file in files:
             try:
-                data = Utils.NewFile(file)
-                self.openResultWindow(data)
+                data, filetype = Utils.NewFile(file)
+                self.openResultWindow(data, filetype)
             except FileNotFoundError as e:
                 print(e)
                 if e.args[0] == "NoHeader":
@@ -140,7 +146,7 @@ class MainWindow(QMainWindow):
     def levelEdit(self):
         data = self.resultsWindows[self.active_result_window].data
         data.level_linewise()
-        self.openResultWindow(data)
+        self.openResultWindow(data, filetype=data.filetype)
 
     def aboutHelp(self):
         QtWidgets.QMessageBox.question(self,
@@ -165,8 +171,12 @@ class MainWindow(QMainWindow):
 
         return False
 
-    def setActiveWindow(self, window):
-        self.active_result_window = self.resultsWindows.index(window)
+    def setActiveWindow(self, window = None, close = False):
+        if close is False:
+            self.active_result_window = self.resultsWindows.index(window)
+        else:
+            self.active_result_window = None
+        self._updateMenu()
 
     def on_window_activated(self, active_window):
         if active_window:
@@ -182,7 +192,7 @@ class MainWindow(QMainWindow):
             #print("Aktywne okno: Brak")
 
     def close_result(self, window):
-        self.active_result_window = None
+        self.setActiveWindow(close=True)
         self.resultsWindows.pop(self.resultsWindows.index(window))
 
 

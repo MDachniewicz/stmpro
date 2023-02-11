@@ -15,11 +15,12 @@ import numpy as np
 def NewFile(file):
 
     mtrx = mfh.Matrix(file)
-    if mtrx.filetype == 'Z' or mtrx.filetype == 'I':
+    filetype=mtrx.filetype
+    if filetype == 'Z' or filetype == 'I':
         result = Topography.Topography(filetype='mtrx', data=mtrx)
-    if mtrx.filetype == 'I(V)-curve':
+    if filetype == 'I(V)-curve':
         result = Spectroscopy.Spectroscopy(data=mtrx)
-    return result        
+    return result, filetype       
     
     
     

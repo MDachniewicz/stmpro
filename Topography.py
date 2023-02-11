@@ -20,15 +20,15 @@ class Topography(STMData):
             self.__initXYZ(data)
 
     def __initMtrx(self, mtrx, ax):
-        self.data_type = mtrx.filetype
+        self.filetype = mtrx.filetype
         self.parameters = mtrx.parameter
         self.X = mtrx.x
         self.Y = mtrx.y
         self.filename = mtrx.file
         self.xunit='nm'
-        if self.data_type == 'Z':
+        if self.filetype == 'Z':
             self.__initMtrxZ(mtrx, ax)
-        if self.data_type == 'I':
+        if self.filetype == 'I':
             self.__initMtrxZ(mtrx, ax)
 
     def __initMtrxZ(self, mtrx, ax=0):
@@ -83,29 +83,3 @@ class Topography(STMData):
             a, b = np.linalg.lstsq(np.vstack([self.X[i, :], np.ones(len(self.X[i, :]))]).T, self.Z[i, :], rcond=None)[0]
             self.Z[i, :] = self.Z[i, :] - self.X[i, :] * a - b
 
-'''
-class Current(Topography):
-    def __init__(self, filetype, data, ax=0):
-        self.data_type = data.filetype
-        self.parameters = data.parameter
-        self.X = data.x
-        self.Y = data.y
-        self.filename = data.file
-        if ax == 0:
-            self.I = data.imageForwUp
-            self.name = 'Topography Image Forward-Up ' + data.file
-        elif ax == 1:
-            self.I = data.imageBackUp
-        elif ax == 2:
-            self.I = data.imageForwDown
-        elif ax == 3:
-            self.I = data.imageBackDown
-            
-    def plotData(self, ax=None):
-        if ax:
-            im = ax.pcolor(self.X * 10 ** 9, self.Y * 10 ** 9, self.I)
-            divider = make_axes_locatable(ax)
-            cax = divider.append_axes("right", size="5%", pad=0.05)
-            ax.axis('equal')
-            plt.colorbar(im, cax=cax)
-'''
