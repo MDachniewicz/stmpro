@@ -8,7 +8,7 @@ import matplotlib
 matplotlib.use('Qt5Agg')
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-
+import copy
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import QtCore
 
@@ -21,36 +21,40 @@ class ResultWindow(QMainWindow):
             self.states=[data]
             self.activeState = 0
             
-        def undoPossible(self):
+        def redoPossible(self):
             if self.activeState > 0:
                 return True
             else:
                 return False
             
-        def redoPossible(self):
-            if self.activeState < len(self.states):
-                return True
+        def undoPossible(self):
+            if self.activeState < (len(self.states)-1):
+                return True               
             else:
                 return False
+                
             
-        def newState(self, data):
+        def saveState(self, data):
             if self.redoPossible():
-                del self.states[self.activeState+1:]
-            self.states.append(data)
-            
+                self.states[0]=self.states[self.activeState]
+                self.activeState=0
+                del self.states[1:]
+            data_cpy=copy.deepcopy(data)
+            self.states.insert(1,data_cpy)
+            #self.activeState
                 
             if len(self.states)>5:
-                self.states.pop(0)
-            self.activeState=len(self.states)
-            
+                self.states.pop(5)
+            self.activeState=0
         def prevState(self):
+            
             if self.undoPossible():
-                self.activeState-=1
+                self.activeState+=1
                 return self.states[self.activeState]
             
         def nextState(self):
             if self.redoPossible():
-                self.activeState+=1
+                self.activeState-=1
                 return self.states[self.activeState]
             
 
@@ -66,19 +70,14 @@ class ResultWindow(QMainWindow):
         self.canvas = FigureCanvasColorbar(self, width=width, height=height, dpi=dpi)
         self.setCentralWidget(self.canvas)
         # Ploting image in axes
-        #self.drawPlot()
-        #self.show()
+
         
         # Setting windown name
         if name==None:
             self.setWindowTitle(data.filename)
             
     def drawPlot(self):
-        #self.canvas.axesImg.cla()
-        #self.canvas.axesColorbar.cla()
-        #self.data.plotData(self.canvas.axes)
-        #im=self.canvas.axesImg.pcolor(self.data.X * 10 ** 9, self.data.Y * 10 ** 9, self.data.Z)
-        #self.canvas.fig.colorbar(im, cax=self.canvas.axesColorbar)
+
         self.canvas.fig.clf()
         axes = self.canvas.fig.add_subplot(111)
         im=axes.pcolor(self.data.X * 10 ** 9, self.data.Y * 10 ** 9, self.data.Z)
@@ -87,6 +86,7 @@ class ResultWindow(QMainWindow):
         
         
     def undo(self):
+        
         self.data=self.winState.prevState()
         self.drawPlot()
         
@@ -95,8 +95,8 @@ class ResultWindow(QMainWindow):
         self.drawPlot()
     
     def modifyData(self, method):
+        self.winState.saveState(self.data)
         method()
-        self.winState.newState(self.data)
         self.drawPlot()
         
     # Event handling    
@@ -134,8 +134,6 @@ class FigureCanvas(FigureCanvasQTAgg):
 class FigureCanvasColorbar(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
-        #self.axesImg = self.fig.add_subplot(121)
-        #self.axesColorbar = self.fig.add_subplot(122)
         super(FigureCanvasColorbar, self).__init__(self.fig)
         
         

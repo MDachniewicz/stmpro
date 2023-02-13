@@ -47,8 +47,11 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(self.exitAction)
 
         editMenu = menuBar.addMenu("&Edit")
-        menuBar.addMenu(editMenu)
+        menuBar.addMenu(editMenu)        
         editMenu.addAction(self.levelAction)
+        editMenu.addAction(self.undoAction)
+        editMenu.addAction(self.redoAction)
+        
         helpMenu = menuBar.addMenu("&Help")
         helpMenu.addAction(self.aboutAction)
 
@@ -58,8 +61,10 @@ class MainWindow(QMainWindow):
         self.saveXYZAction = QAction("&Save XYZ", self)
         self.exitAction = QAction("&Exit", self)
 
+        self.undoAction = QAction("&Undo", self)
+        self.redoAction = QAction("&Redo", self)
         self.levelAction = QAction("&Level", self)
-
+        
         self.helpContentAction = QAction("&Help Content", self)
         self.aboutAction = QAction("&About", self)
 
@@ -68,13 +73,20 @@ class MainWindow(QMainWindow):
         self.openXYZAction.triggered.connect(self.openXYZFile)
         self.saveXYZAction.triggered.connect(self.saveXYZFile)
         self.exitAction.triggered.connect(self.exitFile)
+        
+        self.redoAction.triggered.connect(self.redoEdit)
+        self.undoAction.triggered.connect(self.undoEdit)
         self.levelAction.triggered.connect(self.levelEdit)
+        
+        
         self.aboutAction.triggered.connect(self.aboutHelp)
         
     def _updateMenu(self):
         if self.active_result_window == None:
             self.levelAction.setDisabled(True)
             self.saveXYZAction.setDisabled(True)
+            self.undoAction.setDisabled(True)
+            self.redoAction.setDisabled(True)
         
         else:
             active_window = self.resultsWindows[self.active_result_window]
@@ -84,7 +96,14 @@ class MainWindow(QMainWindow):
             if isinstance(active_window, SpectroscopyWindow):
                 self.levelAction.setDisabled(True)
                 self.saveXYZAction.setDisabled(True)
-            
+            if active_window.winState.undoPossible():
+                self.undoAction.setDisabled(False)
+            else:
+                self.undoAction.setDisabled(True)
+            if active_window.winState.redoPossible():
+                self.redoAction.setDisabled(False)
+            else:
+                self.redoAction.setDisabled(True)
 
     def openResultWindow(self, data, filetype):
         if filetype == 'Z' or filetype == 'I':
@@ -155,6 +174,16 @@ class MainWindow(QMainWindow):
 
     def exitFile(self):
         self.close()
+        
+    def undoEdit(self):
+        result=self.resultsWindows[self.active_result_window]
+        result.undo()
+        self._updateMenu()
+        
+    def redoEdit(self):
+        result=self.resultsWindows[self.active_result_window]
+        result.redo()
+        self._updateMenu()
 
     def levelEdit(self):
         #data = self.resultsWindows[self.active_result_window].data
@@ -162,7 +191,7 @@ class MainWindow(QMainWindow):
         #self.openResultWindow(data, filetype=data.filetype)
         result=self.resultsWindows[self.active_result_window]
         result.modifyData(result.data.level_linewise)
-        
+        self._updateMenu()
 
     def aboutHelp(self):
         QtWidgets.QMessageBox.question(self,
