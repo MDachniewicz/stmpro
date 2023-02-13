@@ -105,7 +105,6 @@ class MainWindow(QMainWindow):
                 data, filetype = Utils.NewFile(file)
                 self.openResultWindow(data, filetype)
             except FileNotFoundError as e:
-                print(e)
                 if e.args[0] == "NoHeader":
                     QtWidgets.QMessageBox.question(self,
                                                    "Error",
@@ -133,9 +132,8 @@ class MainWindow(QMainWindow):
     def saveXYZFile(self):
 
         file, _ = QFileDialog.getSaveFileName(self)
-        #print(file)
         self.resultsWindows[self.active_result_window].data.saveXYZ(os.path.split(file)[1])
-        #print('Save clicked')
+
         
     def getXYZsize(self):
         dialog = QtWidgets.QInputDialog()
@@ -159,9 +157,12 @@ class MainWindow(QMainWindow):
         self.close()
 
     def levelEdit(self):
-        data = self.resultsWindows[self.active_result_window].data
-        data.level_linewise()
-        self.openResultWindow(data, filetype=data.filetype)
+        #data = self.resultsWindows[self.active_result_window].data
+        #data.level_linewise()
+        #self.openResultWindow(data, filetype=data.filetype)
+        result=self.resultsWindows[self.active_result_window]
+        result.modifyData(result.data.level_linewise)
+        
 
     def aboutHelp(self):
         QtWidgets.QMessageBox.question(self,
@@ -173,7 +174,6 @@ class MainWindow(QMainWindow):
         if event.type() == QtCore.QEvent.WindowActivate:
             self.on_window_activated(self)
         if event.type() == QtCore.QEvent.Close:
-            #print("Close clicked")
             answer = QtWidgets.QMessageBox.question(self,
                                                     "Confirm Exit...",
                                                     "Are you sure you want to exit?\nAll data will be lost.",
@@ -197,15 +197,10 @@ class MainWindow(QMainWindow):
         if active_window:
             if isinstance(active_window, ResultWindow):
                 self.setActiveWindow(window=active_window)
-                #self.active_result_window = self.resultsWindows.index(active_window)
-                #print(self.active_result_window)
-
-                # self.setActiveWindow(MainWindow, active_window)
-                #print("Aktywne okno:", active_window.windowTitle())
 
         else:
             pass
-            #print("Aktywne okno: Brak")
+
 
     def close_result(self, window):
         self.setActiveWindow(close=True)

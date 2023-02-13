@@ -62,7 +62,7 @@ class Topography(STMData):
         self.filename = data[3]
 
     def plotData(self, ax=None):
-        if ax:
+        if ax:            
             im = ax.pcolor(self.X * 10 ** 9, self.Y * 10 ** 9, self.Z)
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right", size="5%", pad=0.05)
