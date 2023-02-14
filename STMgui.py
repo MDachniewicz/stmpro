@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import (QMainWindow, QMenu,
 
 import Utils
 from ResultWindow import ResultWindow, SpectroscopyWindow, TopographyWindow
+from FilterWindow import FilterWindow
 
 
 class MainWindow(QMainWindow):
@@ -30,6 +31,9 @@ class MainWindow(QMainWindow):
         
         self._updateMenu()
         
+        # Creating filter window
+        self.filterWin = FilterWindow()
+        
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("STMpro")
         MainWindow.setWindowTitle("STMpro")
@@ -39,32 +43,37 @@ class MainWindow(QMainWindow):
 
     def _createMenuBar(self):
         menuBar = self.menuBar()
+        # File Menu
         fileMenu = QMenu("&File", self)
         menuBar.addMenu(fileMenu)
         fileMenu.addAction(self.openAction)
         fileMenu.addAction(self.openXYZAction)
         fileMenu.addAction(self.saveXYZAction)
         fileMenu.addAction(self.exitAction)
-
+        # Edit Menu
         editMenu = menuBar.addMenu("&Edit")
         menuBar.addMenu(editMenu)        
-        editMenu.addAction(self.levelAction)
         editMenu.addAction(self.undoAction)
         editMenu.addAction(self.redoAction)
-        
+        editMenu.addSeparator()
+        editMenu.addAction(self.levelAction)
+        editMenu.addAction(self.filterAction)
+        # Help Menu
         helpMenu = menuBar.addMenu("&Help")
         helpMenu.addAction(self.aboutAction)
 
     def _createActions(self):
+        #File
         self.openAction = QAction("&Open mtrx...", self)
         self.openXYZAction = QAction("&Open XYZ...", self)
         self.saveXYZAction = QAction("&Save XYZ", self)
         self.exitAction = QAction("&Exit", self)
-
+        #Edit
         self.undoAction = QAction("&Undo", self)
         self.redoAction = QAction("&Redo", self)
         self.levelAction = QAction("&Level", self)
-        
+        self.filterAction = QAction("&Filter...", self)
+        #Help        
         self.helpContentAction = QAction("&Help Content", self)
         self.aboutAction = QAction("&About", self)
 
@@ -77,7 +86,7 @@ class MainWindow(QMainWindow):
         self.redoAction.triggered.connect(self.redoEdit)
         self.undoAction.triggered.connect(self.undoEdit)
         self.levelAction.triggered.connect(self.levelEdit)
-        
+        self.filterAction.triggered.connect(self.filterEdit)
         
         self.aboutAction.triggered.connect(self.aboutHelp)
         
@@ -186,12 +195,12 @@ class MainWindow(QMainWindow):
         self._updateMenu()
 
     def levelEdit(self):
-        #data = self.resultsWindows[self.active_result_window].data
-        #data.level_linewise()
-        #self.openResultWindow(data, filetype=data.filetype)
         result=self.resultsWindows[self.active_result_window]
         result.modifyData(result.data.level_linewise)
         self._updateMenu()
+        
+    def filterEdit(self):
+        self.filterWin.show()
 
     def aboutHelp(self):
         QtWidgets.QMessageBox.question(self,
