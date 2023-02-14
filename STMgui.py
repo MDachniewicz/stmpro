@@ -141,7 +141,7 @@ class MainWindow(QMainWindow):
         for file in files:
             try:
                 data = Utils.NewFileXYZ(file, shape)
-                self.openResultWindow(data)
+                self.openResultWindow(data, 'Z')
             except ValueError:
                 QtWidgets.QMessageBox.question(self,
                                                 "Error",

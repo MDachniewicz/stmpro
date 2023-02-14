@@ -69,13 +69,12 @@ class ResultWindow(QMainWindow):
         # Creating figure canvas
         self.canvas = FigureCanvasColorbar(self, width=width, height=height, dpi=dpi)
         self.setCentralWidget(self.canvas)
-        # Ploting image in axes
-
-        
+    
         # Setting windown name
         if name==None:
             self.setWindowTitle(data.filename)
             
+    # Ploting image in axes        
     def drawPlot(self):
 
         self.canvas.fig.clf()
