@@ -93,9 +93,12 @@ class ResultWindow(QMainWindow):
         self.data=self.winState.nextState()
         self.drawPlot()
     
-    def modifyData(self, method):
+    def modifyData(self, method, param=None):
         self.winState.saveState(self.data)
-        method()
+        if param == None:
+            method()
+        else:
+            method(param)
         self.drawPlot()
         
     # Event handling    
@@ -123,6 +126,13 @@ class SpectroscopyWindow(ResultWindow):
         
         super().__init__(data, parent, width, height, dpi, name)
         self.show()
+        self.drawPlot()
+        
+    def drawPlot(self):
+        self.canvas.fig.clf()
+        axes = self.canvas.fig.add_subplot(111)
+        self.data.plotData(axes)
+        self.canvas.draw()
     
 class FigureCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):

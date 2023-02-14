@@ -6,7 +6,7 @@ Created on Thu Jan 26 20:58:54 2023
 """
 import numpy as np
 from STMData import STMData
-
+import Filters
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -83,3 +83,8 @@ class Topography(STMData):
             a, b = np.linalg.lstsq(np.vstack([self.X[i, :], np.ones(len(self.X[i, :]))]).T, self.Z[i, :], rcond=None)[0]
             self.Z[i, :] = self.Z[i, :] - self.X[i, :] * a - b
 
+    def median(self, size):
+        self.Z = Filters.median2d(self.Z, size)
+        
+    def mean(self, size):
+        self.Z = Filters.mean2d(self.Z, size)

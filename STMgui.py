@@ -29,10 +29,11 @@ class MainWindow(QMainWindow):
         self.resultsWindows = []
         self.active_result_window = None
         
-        self._updateMenu()
-        
         # Creating filter window
-        self.filterWin = FilterWindow()
+        self.filterWin = FilterWindow(self)
+        #
+        self._updateMenu()
+        self._updateWindows()
         
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("STMpro")
@@ -93,6 +94,7 @@ class MainWindow(QMainWindow):
     def _updateMenu(self):
         if self.active_result_window == None:
             self.levelAction.setDisabled(True)
+            self.filterAction.setDisabled(True)
             self.saveXYZAction.setDisabled(True)
             self.undoAction.setDisabled(True)
             self.redoAction.setDisabled(True)
@@ -101,9 +103,11 @@ class MainWindow(QMainWindow):
             active_window = self.resultsWindows[self.active_result_window]
             if isinstance(active_window, TopographyWindow):
                 self.levelAction.setDisabled(False)
+                self.filterAction.setDisabled(False)
                 self.saveXYZAction.setDisabled(False)
             if isinstance(active_window, SpectroscopyWindow):
                 self.levelAction.setDisabled(True)
+                self.filterAction.setDisabled(True)
                 self.saveXYZAction.setDisabled(True)
             if active_window.winState.undoPossible():
                 self.undoAction.setDisabled(False)
@@ -113,6 +117,17 @@ class MainWindow(QMainWindow):
                 self.redoAction.setDisabled(False)
             else:
                 self.redoAction.setDisabled(True)
+                
+                
+    def _updateWindows(self):
+        if self.active_result_window == None:
+            self.filterWin.disable()
+        else:
+            active_window = self.resultsWindows[self.active_result_window]
+            if isinstance(active_window, TopographyWindow):
+                self.filterWin.enable()
+            else:
+                self.filterWin.disable()
 
     def openResultWindow(self, data, filetype):
         if filetype == 'Z' or filetype == 'I':
@@ -182,6 +197,7 @@ class MainWindow(QMainWindow):
         return ret, int(input_points.text()), int(input_lines.text())
 
     def exitFile(self):
+        self.filterWin.close()
         self.close()
         
     def undoEdit(self):
@@ -219,6 +235,7 @@ class MainWindow(QMainWindow):
             event.ignore()
             if answer == QtWidgets.QMessageBox.Yes:
                 event.accept()
+                self.filterWin.close()
                 for x in range(len(self.resultsWindows)):
                     self.resultsWindows.pop()
 
@@ -230,6 +247,7 @@ class MainWindow(QMainWindow):
         else:
             self.active_result_window = None
         self._updateMenu()
+        self._updateWindows()
 
     def on_window_activated(self, active_window):
         if active_window:

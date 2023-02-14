@@ -6,17 +6,17 @@ Created on Thu Jan 26 21:05:15 2023
 """
 
 class STMData:
-    file_name=None
+    filename=None
     parameters={}
     comment={}
-    data_type=None
+    filetype=None
     unit=None
     
     def __init__(self):
         pass
     
     def __repr__(self):
-        if self.data_type=='Z':
+        if self.filetype=='Z':
             return 'Topography image'
         else:
             return 'No data'
