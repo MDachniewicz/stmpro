@@ -1,42 +1,53 @@
-from PyQt5.QtWidgets import QDialog, QSlider, QLabel
+from PyQt5.QtWidgets import QDialog, QSlider, QLabel, QWidget, QMainWindow
 from PyQt5 import QtCore, QtWidgets
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.figure import Figure
 
-class ProfileWindow(QDialog):  
-    
-    
+
+class ProfileWindow(QDialog):     
     def __init__(self, parent):
         super(ProfileWindow, self).__init__()
         self.parent=parent
-        self._setup(self)
+        self._setup()
         self._createActions()
         self._connectActions()
         
         self.profile_width = 3
         self._update()
         
-    def _setup(self, Win):
-        Win.setObjectName("Filter image")
-        Win.setFixedSize(310, 440)
-        Win.setWindowTitle("Filter")      
+    def _setup(self):
+        self.setObjectName("Profile Window")
+        self.setFixedSize(750, 440)
+        self.setWindowTitle("Profile") 
+        
+        self.plotting_area = QtWidgets.QWidget(self)
+        self.plotting_area.setGeometry(QtCore.QRect(20, 20, 700, 300))
+        
+        
+        self.plotting_area_layout = QtWidgets.QVBoxLayout(self.plotting_area)
+        self.canvas = FigureCanvas(self, 5, 3, 100)       
+        self.plotting_area_layout.addWidget(self.canvas)
+        self.canvas.axes.plot([1,2,3,4], [2,2,5,6])
+        self.canvas.draw()
         
     def _createActions(self):
         self.slider = QSlider(QtCore.Qt.Orientation.Horizontal, self)
-        self.slider.setGeometry(QtCore.QRect(20, 100, 150, 20))
-        self.slider.setRange(1, 20)
+        self.slider.setGeometry(QtCore.QRect(20, 350, 150, 20))
+        self.slider.setRange(1, 40)
         self.slider.setValue(3)
         self.slider.setSingleStep(1)
         
         self.profile_width_display = QLabel(f'Profile Width: {3}', self)
-        self.profile_width_display.setGeometry(QtCore.QRect(180, 100, 80, 20))
+        self.profile_width_display.setGeometry(QtCore.QRect(180, 350, 80, 20))
         
         # Create apply button
         self.applyButton = QtWidgets.QPushButton("Apply", self)
-        self.applyButton.setGeometry(QtCore.QRect(60, 330, 81, 41))
+        self.applyButton.setGeometry(QtCore.QRect(520, 350, 70, 30))
         self.applyButton.setObjectName("applyButton")
         
         #Create cancel button
         self.cancelButton = QtWidgets.QPushButton("Cancel", self)
-        self.cancelButton.setGeometry(QtCore.QRect(170, 330, 81, 41))
+        self.cancelButton.setGeometry(QtCore.QRect(630, 350, 70, 30))
         self.cancelButton.setObjectName("cancelButton")
          
     def _connectActions(self):
@@ -68,4 +79,8 @@ class ProfileWindow(QDialog):
         self._update()
         
     
-        
+class FigureCanvas(FigureCanvasQTAgg):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        super(FigureCanvas, self).__init__(fig)        
