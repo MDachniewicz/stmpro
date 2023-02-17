@@ -86,6 +86,4 @@ class FilterWindow(QDialog):
     def index_changed(self, i):
         self.active_filter = i
         self._update()
-        
-    
-        
+

@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
 
         self.resultsWindows = []
         self.active_result_window = None
-        
+        self.interaction_mode = None
         # Creating filter window
         self.filterWin = FilterWindow(self)
         self.profileWin = ProfileWindow(self)
@@ -59,6 +59,7 @@ class MainWindow(QMainWindow):
         editMenu.addAction(self.undoAction)
         editMenu.addAction(self.redoAction)
         editMenu.addSeparator()
+        editMenu.addAction(self.setZeroLevelAction)
         editMenu.addAction(self.levelAction)
         editMenu.addAction(self.filterAction)
         editMenu.addAction(self.profileAction)
@@ -76,6 +77,7 @@ class MainWindow(QMainWindow):
         self.undoAction = QAction("&Undo", self)
         self.redoAction = QAction("&Redo", self)
         self.levelAction = QAction("&Level", self)
+        self.setZeroLevelAction = QAction("&Set Zero Level", self)
         self.filterAction = QAction("&Filter...", self)
         self.profileAction = QAction("Profile...", self)
         #Help        
@@ -90,6 +92,7 @@ class MainWindow(QMainWindow):
         
         self.redoAction.triggered.connect(self.redoEdit)
         self.undoAction.triggered.connect(self.undoEdit)
+        self.setZeroLevelAction.triggered.connect(self.setZeroLevelEdit)
         self.levelAction.triggered.connect(self.levelEdit)
         self.filterAction.triggered.connect(self.filterEdit)
         self.profileAction.triggered.connect(self.profileEdit)
@@ -99,6 +102,7 @@ class MainWindow(QMainWindow):
     def _updateMenu(self):
         if self.active_result_window == None:
             self.levelAction.setDisabled(True)
+            self.setZeroLevelAction.setDisabled(True)
             self.filterAction.setDisabled(True)
             self.profileAction.setDisabled(True)
             self.saveXYZAction.setDisabled(True)
@@ -109,11 +113,13 @@ class MainWindow(QMainWindow):
             active_window = self.resultsWindows[self.active_result_window]
             if isinstance(active_window, TopographyWindow):
                 self.levelAction.setDisabled(False)
+                self.setZeroLevelAction.setDisabled(False)
                 self.filterAction.setDisabled(False)
                 self.profileAction.setDisabled(False)
                 self.saveXYZAction.setDisabled(False)
             if isinstance(active_window, SpectroscopyWindow):
                 self.levelAction.setDisabled(True)
+                self.setZeroLevelAction.setDisabled(True)
                 self.filterAction.setDisabled(True)
                 self.profileAction.setDisabled(True)
                 self.saveXYZAction.setDisabled(True)
@@ -139,6 +145,7 @@ class MainWindow(QMainWindow):
             else:
                 self.filterWin.disable()
                 self.profileWin.disable()
+            self.profileWin.update_plot()
 
     def openResultWindow(self, data, filetype):
         if filetype == 'Z' or filetype == 'I':
@@ -208,6 +215,7 @@ class MainWindow(QMainWindow):
         return ret, int(input_points.text()), int(input_lines.text())
 
     def exitFile(self):
+        self.profileWin.close()
         self.filterWin.close()
         self.close()
         
@@ -215,27 +223,39 @@ class MainWindow(QMainWindow):
         result=self.resultsWindows[self.active_result_window]
         result.undo()
         self._updateMenu()
+        self._updateWindows()
         
     def redoEdit(self):
         result=self.resultsWindows[self.active_result_window]
         result.redo()
         self._updateMenu()
+        self._updateWindows()
 
     def levelEdit(self):
         result=self.resultsWindows[self.active_result_window]
         result.modifyData(result.data.level_linewise)
         self._updateMenu()
+        self._updateWindows()
+
+    def setZeroLevelEdit(self):
+        result=self.resultsWindows[self.active_result_window]
+        result.modifyData(result.data.set_zero_level)
+        self._updateMenu()
+        self._updateWindows()
         
     def filterEdit(self):
         self.filterWin.show()
+        self._updateWindows()
         
     def profileEdit(self):
         self.profileWin.show()
+        self.interaction_mode = 'profile'
+        self._updateWindows()
 
     def aboutHelp(self):
         QtWidgets.QMessageBox.question(self,
                                        "About",
-                                       "STMpro 0.0.4 pre-alpha",
+                                       "STMpro 0.0.5 pre-alpha",
                                        QtWidgets.QMessageBox.Ok)
 
     def eventFilter(self, source, event):
@@ -252,7 +272,7 @@ class MainWindow(QMainWindow):
                 self.filterWin.close()
                 self.profileWin.close()
                 for x in range(len(self.resultsWindows)):
-                    self.resultsWindows.pop()
+                    self.resultsWindows[0].close()
 
         return False
 
@@ -269,8 +289,8 @@ class MainWindow(QMainWindow):
             if isinstance(active_window, ResultWindow):
                 self.setActiveWindow(window=active_window)
 
-        else:
-            pass
+                if self.interaction_mode == 'profile':
+                    self.profileWin.update_plot()
 
 
     def close_result(self, window):
