@@ -137,6 +137,7 @@ class MainWindow(QMainWindow):
         editMenu.addSeparator()
         editMenu.addAction(self.setZeroLevelAction)
         editMenu.addAction(self.levelAction)
+        editMenu.addAction(self.level_planeAction)
         editMenu.addAction(self.filterAction)
         editMenu.addAction(self.profileAction)
         # Help Menu
@@ -152,7 +153,8 @@ class MainWindow(QMainWindow):
         #Edit
         self.undoAction = QAction("&Undo", self)
         self.redoAction = QAction("&Redo", self)
-        self.levelAction = QAction("&Level", self)
+        self.levelAction = QAction("&Level linewise", self)
+        self.level_planeAction = QAction("&Level plane", self)
         self.setZeroLevelAction = QAction("&Set Zero Level", self)
         self.filterAction = QAction("&Filter...", self)
         self.profileAction = QAction("Profile...", self)
@@ -170,6 +172,7 @@ class MainWindow(QMainWindow):
         self.undoAction.triggered.connect(self.undoEdit)
         self.setZeroLevelAction.triggered.connect(self.setZeroLevelEdit)
         self.levelAction.triggered.connect(self.levelEdit)
+        self.level_planeAction.triggered.connect(self.level_planeEdit)
         self.filterAction.triggered.connect(self.filterEdit)
         self.profileAction.triggered.connect(self.profileEdit)
         
@@ -181,10 +184,12 @@ class MainWindow(QMainWindow):
         self.undo_button.clicked.connect(self.undoEdit)
         self.redo_button.clicked.connect(self.redoEdit)
         self.level_linewise_button.clicked.connect(self.levelEdit)
+        self.level_plane_button.clicked.connect(self.level_planeEdit)
         
     def _update_push_buttons(self):
         if self.active_result_window == None:
             self.level_linewise_button.setDisabled(True)
+            self.level_plane_button.setDisabled(True)
             self.undo_button.setDisabled(True)
             self.redo_button.setDisabled(True)
         
@@ -192,8 +197,10 @@ class MainWindow(QMainWindow):
             active_window = self.resultsWindows[self.active_result_window]
             if isinstance(active_window, TopographyWindow):
                 self.level_linewise_button.setDisabled(False)
+                self.level_plane_button.setDisabled(False)
             if isinstance(active_window, SpectroscopyWindow):
                 self.level_linewise_button.setDisabled(True)
+                self.level_plane_button.setDisabled(True)
             if active_window.winState.undoPossible():
                 self.undo_button.setDisabled(False)
             else:
@@ -343,6 +350,14 @@ class MainWindow(QMainWindow):
         if self.resultsWindows != []:
             result=self.resultsWindows[self.active_result_window]
             result.modifyData(result.data.level_linewise)
+            self._update_menu()
+            self._update_push_buttons()
+            self._updateWindows()
+
+    def level_planeEdit(self):
+        if self.resultsWindows != []:
+            result=self.resultsWindows[self.active_result_window]
+            result.modifyData(result.data.level_plane)
             self._update_menu()
             self._update_push_buttons()
             self._updateWindows()

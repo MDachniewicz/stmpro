@@ -5,6 +5,7 @@ Created on Thu Jan 26 20:58:54 2023
 @author: marek
 """
 import numpy as np
+import itertools
 from STMData import STMData
 import Filters
 import Curves
@@ -88,6 +89,33 @@ class Topography(STMData):
             a, b = np.linalg.lstsq(np.vstack([self.X[i, :], np.ones(len(self.X[i, :]))]).T, self.Z[i, :], rcond=None)[0]
             self.Z[i, :] = self.Z[i, :] - self.X[i, :] * a - b
 
+    def level_plane(self):
+        x = self.X.reshape((-1, ))
+        y = self.Y.reshape((-1, ))
+        z = self.Z.reshape((-1, ))
+        def polyfit2d(x, y, z, order=1):
+            ncols = (order + 1) ** 2
+            G = np.zeros((x.size, ncols))
+            ij = itertools.product(range(order + 1), range(order + 1))
+            for k, (i, j) in enumerate(ij):
+                G[:, k] = x ** i * y ** j
+            m, _, _, _ = np.linalg.lstsq(G, z, rcond=None)
+            return m
+
+        def polyval2d(x, y, m):
+            order = int(np.sqrt(len(m))) - 1
+            ij = itertools.product(range(order + 1), range(order + 1))
+            z = np.zeros_like(x)
+            for a, (i, j) in zip(m, ij):
+                z += a * x ** i * y ** j
+            return z
+
+        m = polyfit2d(x, y, z)
+        z = polyval2d(z, y, m)
+        z = z.reshape((self.Z.shape))
+
+        self.Z = self.Z - z
+
     def set_zero_level(self):
         min_z = np.min(self.Z)
         self.Z = self.Z - min_z
@@ -104,3 +132,4 @@ class Topography(STMData):
               (self.Y[start_point[0],start_point[1]]-self.Y[end_point[0],end_point[1]])**2)**0.5
         distance = np.linspace(0, dist, num=len(profile))
         return distance, profile
+
