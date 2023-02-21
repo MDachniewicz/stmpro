@@ -39,7 +39,11 @@ class ProfileWindow(QDialog):
                 y2 = round(profile.second_point.y)
                 distance, profile=active_window.data.get_profile((x1,y1), (x2, y2), self.profile_width)
                 self.canvas.axes.plot(distance, profile)
-                self.canvas.draw()
+            self.canvas.draw()
+
+    def clear_plot(self):
+        self.canvas.axes.cla()
+        self.canvas.draw()
 
     def _createActions(self):
         self.slider = QSlider(QtCore.Qt.Orientation.Horizontal, self)

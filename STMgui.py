@@ -240,6 +240,7 @@ class MainWindow(QMainWindow):
         if self.active_result_window == None:
             self.filterWin.disable()
             self.profileWin.disable()
+            self.profileWin.clear_plot()
         else:
             active_window = self.resultsWindows[self.active_result_window]
             if isinstance(active_window, TopographyWindow):
@@ -249,6 +250,7 @@ class MainWindow(QMainWindow):
             else:
                 self.filterWin.disable()
                 self.profileWin.disable()
+                self.profileWin.clear_plot()
 
 
     def openResultWindow(self, data, filetype):
@@ -398,7 +400,6 @@ class MainWindow(QMainWindow):
         if active_window:
             if isinstance(active_window, ResultWindow):
                 self.setActiveWindow(window=active_window)
-
             self._updateWindows()
 
 

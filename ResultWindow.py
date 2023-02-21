@@ -104,7 +104,7 @@ class ResultWindow(QMainWindow):
             method(param)
         self.drawPlot()
 
-    # Event handling    
+    # Event handling
     def eventFilter(self, source, event):
         # Setting active result window if activated
         if event.type() == QtCore.QEvent.WindowActivate:
@@ -113,28 +113,6 @@ class ResultWindow(QMainWindow):
         if event.type() == QtCore.QEvent.Close:
             self.parent.close_result(self)
         return False
-
-    def mouse_press(self, e):
-        if e.inaxes != self.canvasImg.axes:
-            #print(e.inaxes)
-            return
-        if self.parent.interaction_mode == 'profile':
-            if self.first_point == None:
-                self.first_point = Point(parent=self, x=e.xdata, y=e.ydata, size=self.point_size)
-                self.drawPlot()
-            else:
-                second_point = Point(parent=self, x=e.xdata, y=e.ydata, size=self.point_size)
-                profile_line = Profile(parent=self, first_point=self.first_point, second_point=second_point)
-                self.profile_lines.append(profile_line)
-                self.first_point = None
-                self.drawPlot()
-                self.parent.profileWin.update_plot()
-                #print(e.inaxes)
-                #print(e.xdata, e.ydata)
-        
-
-    def mouse_release(self, e):
-        pass
 
 class Profile:
     def __init__(self, parent, first_point, second_point):
@@ -155,6 +133,7 @@ class Point:
         self.x = x
         self.y = y
         self.point = matplotlib.patches.Ellipse((x, y), size, size, fc='r', alpha=0.5, edgecolor='r')
+        self.point.set_picker(5)
 
     def draw_point(self):
         self.parent.canvasImg.axes.add_patch(self.point)
@@ -175,7 +154,7 @@ class TopographyWindow(ResultWindow):
         self.canvasColorbar.setMaximumWidth(100)
 
         self.setCentralWidget(self.plotting_area)
-        self.point_size = 0.05 * self.data.xrange
+        self.point_size = 5
 
         self.first_point = None
         self.profile_lines = []
@@ -191,14 +170,51 @@ class TopographyWindow(ResultWindow):
         self.canvasColorbar.fig.colorbar(im, cax=self.canvasColorbar.axes)
         self.canvasColorbar.axes.set_title(self.data.unit)
         self.canvasImg.axes.set_aspect('equal')
+        self._draw_profile_lines()
+        self.canvasImg.draw()
+        self.canvasColorbar.draw()
+
+    def _draw_profile_lines(self):
         if self.first_point != None:
             self.first_point.draw_point()
         if self.profile_lines != []:
             for x in self.profile_lines:
                 x.draw_profile()
-        self.canvasImg.draw()
-        self.canvasColorbar.draw()
+        self.parent.profileWin.update_plot()
 
+    def mouse_press(self, e):
+        if e.inaxes != self.canvasImg.axes:
+            return
+        if self.parent.interaction_mode == 'profile':
+
+            if self.first_point == None:
+                self.first_point = Point(parent=self, x=e.xdata, y=e.ydata, size=self.point_size)
+                self.drawPlot()
+            else:
+                second_point = Point(parent=self, x=e.xdata, y=e.ydata, size=self.point_size)
+                profile_line = Profile(parent=self, first_point=self.first_point, second_point=second_point)
+                self.profile_lines.append(profile_line)
+                self.first_point = None
+                self.drawPlot()
+
+    def mouse_press_right(self, e, artist):
+        if e.inaxes != self.canvasImg.axes:
+            return
+        if artist == None:
+            return
+        if self.first_point != None:
+            self.first_point=None
+        else:
+            for enum, profile in enumerate(self.profile_lines):
+                if profile.first_point.point == artist or profile.second_point.point == artist:
+                    self.profile_lines.pop(enum)
+        self.drawPlot()
+
+    def mouse_release(self, e):
+        pass
+
+    def mouse_move(self, e):
+        pass
 
 class SpectroscopyWindow(ResultWindow):
     def __init__(self, data=None, parent=None, width=4.5, height=4, dpi=100, name=None):
@@ -238,6 +254,8 @@ class FigureCanvasImg(FigureCanvasQTAgg):
         self.axes.get_yaxis().set_visible(False)
         self.axes.set_position([0.01, 0.01, 0.98, 0.98])
         self.parent = parent
+        self.artist = None
+        self.button = None
         super(FigureCanvasImg, self).__init__(self.fig)
         self.connect()
 
@@ -246,10 +264,34 @@ class FigureCanvasImg(FigureCanvasQTAgg):
             'button_press_event', self.on_press)
         self.cidrelease = self.mpl_connect(
             'button_release_event', self.on_release)
+        self.cidmove = self.mpl_connect(
+            'motion_notify_event', self.on_move)
+        self.cidpick = self.mpl_connect(
+            'pick_event', self.on_pick)
 
     def on_press(self, e):
-        self.parent.mouse_press(e)
+        if isinstance(e, matplotlib.backend_bases.PickEvent):
+            artist=e.artist
+        if isinstance(e, matplotlib.backend_bases.MouseEvent):
+            if e.button == 1:
+                self.button = 'left'
+            if e.button == 3:
+                self.button = 'right'
 
     def on_release(self, e):
-        self.parent.mouse_release(e)
+        if self.artist == None and self.button == 'left':
+            self.parent.mouse_press(e)
+        if self.artist != None and self.button =='right':
+            self.parent.mouse_press_right(e, self.artist)
+        self.button = None
+        self.artist = None
+
+
+    def on_move(self, e):
+        self.parent.mouse_move(e)
+
+    def on_pick(self, e):
+        if isinstance(e.artist, matplotlib.patches.Ellipse):
+            self.artist=e.artist
+
 
