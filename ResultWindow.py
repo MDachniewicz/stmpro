@@ -116,7 +116,7 @@ class ResultWindow(QMainWindow):
 
     def mouse_press(self, e):
         if e.inaxes != self.canvasImg.axes:
-            print(e.inaxes)
+            #print(e.inaxes)
             return
         if self.parent.interaction_mode == 'profile':
             if self.first_point == None:
@@ -129,8 +129,8 @@ class ResultWindow(QMainWindow):
                 self.first_point = None
                 self.drawPlot()
                 self.parent.profileWin.update_plot()
-                print(e.inaxes)
-                print(e.xdata, e.ydata)
+                #print(e.inaxes)
+                #print(e.xdata, e.ydata)
         
 
     def mouse_release(self, e):

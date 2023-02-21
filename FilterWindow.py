@@ -79,7 +79,7 @@ class FilterWindow(QDialog):
             active_window.modifyData(active_window.data.median, self.maskSize)
         if self.filters[self.active_filter]=="Mean":
             active_window.modifyData(active_window.data.mean, self.maskSize)
-    
+        self.parent._updateWindows()
     def cancel(self):
         self.hide()        
         
