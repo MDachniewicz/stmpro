@@ -133,3 +133,19 @@ class Topography(STMData):
         distance = np.linspace(0, dist, num=len(profile))
         return distance, profile
 
+    def mirror_ud(self):
+        self.Z = np.flipud(self.Z)
+
+    def mirror_lr(self):
+        self.Z = np.fliplr(self.Z)
+
+    def rotate90(self,k):
+        self.Z = np.rot90(self.Z, k)
+        if k%2==1:
+            self.X, self.Y = self.Y, self.X
+
+    def histogram(self, n_bins):
+        z = self.Z.reshape(-1,1)
+        hist, bin_edges = np.histogram(z, n_bins)
+        return hist, bin_edges
+

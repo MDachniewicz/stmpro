@@ -15,6 +15,7 @@ import Files
 from ResultWindow import ResultWindow, SpectroscopyWindow, TopographyWindow
 from FilterWindow import FilterWindow
 from ProfileWindow import ProfileWindow
+from HistogramWindow import HistogramWindow
 
 
 class MainWindow(QMainWindow):
@@ -31,9 +32,12 @@ class MainWindow(QMainWindow):
         self.results_windows = []
         self.active_result_window = None
         self.interaction_mode = None
+        self.profile_win_active = False
+        self.hist_win_active = False
         # Creating filter window
         self.filterWin = FilterWindow(self)
         self.profileWin = ProfileWindow(self)
+        self.hist_win = HistogramWindow(self)
         #
         self._update_menu()
         self._update_push_buttons()
@@ -138,6 +142,7 @@ class MainWindow(QMainWindow):
         editMenu.addAction(self.level_planeAction)
         editMenu.addAction(self.filterAction)
         editMenu.addAction(self.profileAction)
+        editMenu.addAction(self.histAction)
         # Help Menu
         helpMenu = menuBar.addMenu("&Help")
         helpMenu.addAction(self.aboutAction)
@@ -157,6 +162,7 @@ class MainWindow(QMainWindow):
         self.setZeroLevelAction = QAction("&Set Zero Level", self)
         self.filterAction = QAction("&Filter...", self)
         self.profileAction = QAction("Profile...", self)
+        self.histAction = QAction("Histogram...", self)
         # Help
         self.helpContentAction = QAction("&Help Content", self)
         self.aboutAction = QAction("&About", self)
@@ -175,6 +181,7 @@ class MainWindow(QMainWindow):
         self.level_planeAction.triggered.connect(self.level_planeEdit)
         self.filterAction.triggered.connect(self.filterEdit)
         self.profileAction.triggered.connect(self.profileEdit)
+        self.histAction.triggered.connect(self.hist_edit)
 
         self.aboutAction.triggered.connect(self.aboutHelp)
 
@@ -216,6 +223,7 @@ class MainWindow(QMainWindow):
             self.setZeroLevelAction.setDisabled(True)
             self.filterAction.setDisabled(True)
             self.profileAction.setDisabled(True)
+            self.histAction.setDisabled(True)
             self.saveXYZAction.setDisabled(True)
             self.save_png_action.setDisabled(True)
             self.undoAction.setDisabled(True)
@@ -230,12 +238,14 @@ class MainWindow(QMainWindow):
                 self.setZeroLevelAction.setDisabled(False)
                 self.filterAction.setDisabled(False)
                 self.profileAction.setDisabled(False)
+                self.histAction.setDisabled(False)
                 self.saveXYZAction.setDisabled(False)
             if isinstance(active_window, SpectroscopyWindow):
                 self.levelAction.setDisabled(True)
                 self.setZeroLevelAction.setDisabled(True)
                 self.filterAction.setDisabled(True)
                 self.profileAction.setDisabled(True)
+                self.histAction.setDisabled(True)
                 self.saveXYZAction.setDisabled(True)
             if active_window.winState.undoPossible():
                 self.undoAction.setDisabled(False)
@@ -251,16 +261,24 @@ class MainWindow(QMainWindow):
             self.filterWin.disable()
             self.profileWin.disable()
             self.profileWin.clear_plot()
+            self.hist_win.disable()
+            self.hist_win.clear_plot()
         else:
             active_window = self.results_windows[self.active_result_window]
             if isinstance(active_window, TopographyWindow):
                 self.filterWin.enable()
                 self.profileWin.enable()
-                self.profileWin.update_plot()
+                if self.profile_win_active:
+                    self.profileWin.update_plot()
+                self.hist_win.enable()
+                if self.hist_win_active:
+                    self.hist_win.update_plot()
             else:
                 self.filterWin.disable()
                 self.profileWin.disable()
                 self.profileWin.clear_plot()
+                self.hist_win.disable()
+                self.hist_win.clear_plot()
 
     def openResultWindow(self, data, filetype):
         if filetype == 'Z' or filetype == 'I':
@@ -272,7 +290,7 @@ class MainWindow(QMainWindow):
 
     def openFile(self):
         options = QFileDialog.Options()
-        files, _ = QFileDialog.getOpenFileNames(self, "QFileDialog.getOpenFileNames()", "", "Z Matrix Files (*.Z_mtrx);;\
+        files, _ = QFileDialog.getOpenFileNames(self, "Open Files", "", "Z Matrix Files (*.Z_mtrx);;\
                                                 I Matrix Files (*.I_mtrx);;\
                                                 I(V) Matrix Files (*.I*V*_mtrx)",
                                                 options=options)
@@ -290,7 +308,7 @@ class MainWindow(QMainWindow):
     # Functions
     def openXYZFile(self):
         options = QFileDialog.Options()
-        files, _ = QFileDialog.getOpenFileNames(self, "QFileDialog.getOpenFileNames()", "", ".xyz Files (*.xyz)",
+        files, _ = QFileDialog.getOpenFileNames(self,"Open Files", "", ".xyz Files (*.xyz)",
                                                 options=options)
         ret, points, lines = self.getXYZsize()
         if ret == False:
@@ -315,7 +333,8 @@ class MainWindow(QMainWindow):
         result_win = self.get_active_window()
         screen = QtWidgets.QApplication.primaryScreen()
         img = screen.grabWindow(result_win.winId())
-        img.save('test.png', 'png')
+        file, _ = QFileDialog.getSaveFileName(self, caption="Save .png", filter="Images (*.png)")
+        img.save(file, 'png')
 
     def getXYZsize(self):
         dialog = QtWidgets.QInputDialog()
@@ -336,6 +355,7 @@ class MainWindow(QMainWindow):
 
     def exitFile(self):
         self.profileWin.close()
+        self.hist_win.close()
         self.filterWin.close()
         self.close()
 
@@ -383,6 +403,12 @@ class MainWindow(QMainWindow):
     def profileEdit(self):
         self.profileWin.show()
         self.change_mode('profile')
+        self.profile_win_active = True
+        self.update_windows()
+
+    def hist_edit(self):
+        self.hist_win.show()
+        self.hist_win_active = True
         self.update_windows()
 
     def aboutHelp(self):
@@ -412,6 +438,7 @@ class MainWindow(QMainWindow):
                 event.accept()
                 self.filterWin.close()
                 self.profileWin.close()
+                self.hist_win.close()
                 for x in range(len(self.results_windows)):
                     self.results_windows[0].close()
 
@@ -436,7 +463,7 @@ class MainWindow(QMainWindow):
         if active_window:
             if isinstance(active_window, ResultWindow):
                 self.setActiveWindow(window=active_window)
-            self.update_windows()
+                self.update_windows()
 
     def close_result(self, window):
         self.setActiveWindow(close=True)

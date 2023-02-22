@@ -40,6 +40,7 @@ class ProfileWindow(QDialog):
                 y2 = round(profile.second_point.y)
                 distance, profile=active_window.data.get_profile((x1,y1), (x2, y2), self.profile_width)
                 self.canvas.axes.plot(distance, profile)
+                print('test')
             self.canvas.draw()
 
     def clear_plot(self):
@@ -121,6 +122,7 @@ class ProfileWindow(QDialog):
         # Calling parent closing function on close
         if event.type() == QtCore.QEvent.Hide:
             self.parent.change_mode(None)
+            self.parent.profile_win_active = False
         return False
 
 
