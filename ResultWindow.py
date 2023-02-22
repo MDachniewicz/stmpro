@@ -58,7 +58,7 @@ class ResultWindow(QMainWindow):
 
         super(ResultWindow, self).__init__()
         self.installEventFilter(self)
-
+        self.setStyleSheet("background-color: white;")
 
 
     def undo(self):
