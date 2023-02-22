@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QDialog, QSlider, QLabel, QWidget, QMainWindow
 from PyQt5 import QtCore, QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+from ResultWindow import ProfileResultWindow
 
 class ProfileWindow(QDialog):
     def __init__(self, parent):
@@ -31,7 +32,7 @@ class ProfileWindow(QDialog):
     def update_plot(self):
         self.canvas.axes.cla()
         if self.parent.active_result_window != None:
-            active_window = self.parent.resultsWindows[self.parent.active_result_window]
+            active_window = self.parent.results_windows[self.parent.active_result_window]
             for profile in active_window.profile_lines:
                 x1 = round(profile.first_point.x)
                 x2 = round(profile.second_point.x)
@@ -55,6 +56,11 @@ class ProfileWindow(QDialog):
         self.profile_width_display = QLabel(f'Profile Width: {3}', self)
         self.profile_width_display.setGeometry(QtCore.QRect(180, 350, 80, 20))
 
+        # Create clear button
+        self.clearButton = QtWidgets.QPushButton("Clear", self)
+        self.clearButton.setGeometry(QtCore.QRect(410, 350, 70, 30))
+        self.clearButton.setObjectName("clearButton")
+
         # Create apply button
         self.applyButton = QtWidgets.QPushButton("Apply", self)
         self.applyButton.setGeometry(QtCore.QRect(520, 350, 70, 30))
@@ -68,6 +74,7 @@ class ProfileWindow(QDialog):
     def _connectActions(self):
         self.applyButton.clicked.connect(self.apply)
         self.cancelButton.clicked.connect(self.cancel)
+        self.clearButton.clicked.connect(self.clear)
         self.slider.valueChanged.connect(self._update_profile_width)
 
     def _update(self):
@@ -76,24 +83,44 @@ class ProfileWindow(QDialog):
     def _update_profile_width(self, value):
         self.profile_width = value
         self.profile_width_display.setText(f'Profile Width: {value}')
+        self.update_plot()
 
     def disable(self):
         self.applyButton.setDisabled(True)
+        self.clearButton.setDisabled(True)
 
     def enable(self):
         self.applyButton.setDisabled(False)
+        self.clearButton.setDisabled(False)
 
     def apply(self):
-        pass
+        active_window = self.parent.results_windows[self.parent.active_result_window]
+        for enum, profile in enumerate(active_window.profile_lines):
+            x1 = round(profile.first_point.x)
+            x2 = round(profile.second_point.x)
+            y1 = round(profile.first_point.y)
+            y2 = round(profile.second_point.y)
+            distance, profile = active_window.data.get_profile((x1, y1), (x2, y2), self.profile_width)
+            name='Profile' + str(enum)
+            profile_win=ProfileResultWindow(distance=distance, profile=profile, parent=self.parent, name=name)
+            self.parent.results_windows.append(profile_win)
 
     def cancel(self):
         self.hide()
+
+    def clear(self):
+        if self.parent.active_result_window != None:
+            active_window = self.parent.results_windows[self.parent.active_result_window]
+            active_window.profile_lines = []
+            active_window.first_point = None
+            active_window.draw()
+            self.clear_plot()
 
     # Event handling
     def eventFilter(self, source, event):
         # Calling parent closing function on close
         if event.type() == QtCore.QEvent.Hide:
-            self.parent.interaction_mode = None
+            self.parent.change_mode(None)
         return False
 
 

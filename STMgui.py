@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import (QMainWindow, QMenu,
                              QAction, QFileDialog)
 
-import Utils
+import Files
 from ResultWindow import ResultWindow, SpectroscopyWindow, TopographyWindow
 from FilterWindow import FilterWindow
 from ProfileWindow import ProfileWindow
@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
         self._connect_push_buttons()
         self.installEventFilter(self)
 
-        self.resultsWindows = []
+        self.results_windows = []
         self.active_result_window = None
         self.interaction_mode = None
         # Creating filter window
@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
         #
         self._update_menu()
         self._update_push_buttons()
-        self._updateWindows()
+        self.update_windows()
         
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("STMpro")
@@ -49,8 +49,8 @@ class MainWindow(QMainWindow):
         #self.widget = QtWidgets.QWidget(self.centralwidget)
         #self.widget.setObjectName("widget")
 
-        self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
-        self.gridLayout.setObjectName("gridLayout")
+        self.grid_layout = QtWidgets.QGridLayout(self.centralwidget)
+        self.grid_layout.setObjectName("gridLayout")
 
         self.openmtrxButton = QtWidgets.QPushButton(self.centralwidget)
         self.openmtrxButton.setObjectName("openmtrxbutton")
@@ -61,7 +61,7 @@ class MainWindow(QMainWindow):
         icon.addPixmap(QtGui.QPixmap("icons/open_mtrx.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.openmtrxButton.setIcon(icon)
         self.openmtrxButton.setIconSize(QtCore.QSize(50, 50))
-        self.gridLayout.addWidget(self.openmtrxButton, 0, 0 , 8,1)
+        self.grid_layout.addWidget(self.openmtrxButton, 0, 0, 8, 1)
 
         self.openxyzButton = QtWidgets.QPushButton(self.centralwidget)
         self.openxyzButton.setObjectName("openmtrxbutton")
@@ -72,7 +72,7 @@ class MainWindow(QMainWindow):
         icon.addPixmap(QtGui.QPixmap("icons/open_xyz.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.openxyzButton.setIcon(icon)
         self.openxyzButton.setIconSize(QtCore.QSize(50,50))
-        self.gridLayout.addWidget(self.openxyzButton, 0, 1, 8, 1)
+        self.grid_layout.addWidget(self.openxyzButton, 0, 1, 8, 1)
 
         self.undo_button = QtWidgets.QPushButton(self.centralwidget)
         self.undo_button.setObjectName("undo_button")
@@ -83,7 +83,7 @@ class MainWindow(QMainWindow):
         icon.addPixmap(QtGui.QPixmap("icons/undo.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.undo_button.setIcon(icon)
         self.undo_button.setIconSize(QtCore.QSize(50, 50))
-        self.gridLayout.addWidget(self.undo_button, 0, 2, 8, 1)
+        self.grid_layout.addWidget(self.undo_button, 0, 2, 8, 1)
 
         self.redo_button = QtWidgets.QPushButton(self.centralwidget)
         self.redo_button.setObjectName("redo_button")
@@ -94,7 +94,7 @@ class MainWindow(QMainWindow):
         icon.addPixmap(QtGui.QPixmap("icons/redo.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.redo_button.setIcon(icon)
         self.redo_button.setIconSize(QtCore.QSize(50, 50))
-        self.gridLayout.addWidget(self.redo_button, 0, 3, 8, 1)
+        self.grid_layout.addWidget(self.redo_button, 0, 3, 8, 1)
 
         self.level_plane_button = QtWidgets.QPushButton(self.centralwidget)
         self.level_plane_button.setObjectName("Level_plane_button")
@@ -105,7 +105,7 @@ class MainWindow(QMainWindow):
         icon.addPixmap(QtGui.QPixmap("icons/level.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.level_plane_button.setIcon(icon)
         self.level_plane_button.setIconSize(QtCore.QSize(50, 50))
-        self.gridLayout.addWidget(self.level_plane_button, 0, 4, 8, 1)
+        self.grid_layout.addWidget(self.level_plane_button, 0, 4, 8, 1)
 
         self.level_linewise_button = QtWidgets.QPushButton(self.centralwidget)
         self.level_linewise_button.setObjectName("Level_linewise_button")
@@ -116,7 +116,7 @@ class MainWindow(QMainWindow):
         icon.addPixmap(QtGui.QPixmap("icons/level_linewise.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.level_linewise_button.setIcon(icon)
         self.level_linewise_button.setIconSize(QtCore.QSize(50, 50))
-        self.gridLayout.addWidget(self.level_linewise_button, 0, 5, 8, 1)
+        self.grid_layout.addWidget(self.level_linewise_button, 0, 5, 8, 1)
 
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -194,7 +194,7 @@ class MainWindow(QMainWindow):
             self.redo_button.setDisabled(True)
         
         else:
-            active_window = self.resultsWindows[self.active_result_window]
+            active_window = self.results_windows[self.active_result_window]
             if isinstance(active_window, TopographyWindow):
                 self.level_linewise_button.setDisabled(False)
                 self.level_plane_button.setDisabled(False)
@@ -221,7 +221,7 @@ class MainWindow(QMainWindow):
             self.redoAction.setDisabled(True)
 
         else:
-            active_window = self.resultsWindows[self.active_result_window]
+            active_window = self.results_windows[self.active_result_window]
             if isinstance(active_window, TopographyWindow):
                 self.levelAction.setDisabled(False)
                 self.setZeroLevelAction.setDisabled(False)
@@ -243,13 +243,13 @@ class MainWindow(QMainWindow):
             else:
                 self.redoAction.setDisabled(True)
                 
-    def _updateWindows(self):
+    def update_windows(self):
         if self.active_result_window == None:
             self.filterWin.disable()
             self.profileWin.disable()
             self.profileWin.clear_plot()
         else:
-            active_window = self.resultsWindows[self.active_result_window]
+            active_window = self.results_windows[self.active_result_window]
             if isinstance(active_window, TopographyWindow):
                 self.filterWin.enable()
                 self.profileWin.enable()
@@ -265,7 +265,7 @@ class MainWindow(QMainWindow):
             win = TopographyWindow(data=data, parent=self)
         if filetype == 'I(V)-curve':
             win = SpectroscopyWindow(data=data, parent=self)
-        self.resultsWindows.append(win)
+        self.results_windows.append(win)
         win.show()
 
     def openFile(self):
@@ -276,7 +276,7 @@ class MainWindow(QMainWindow):
                                                 options=options)
         for file in files:
             try:
-                data, filetype = Utils.NewFile(file)
+                data, filetype = Files.NewFile(file)
                 self.openResultWindow(data, filetype)
             except FileNotFoundError as e:
                 if e.args[0] == "NoHeader":
@@ -295,7 +295,7 @@ class MainWindow(QMainWindow):
         shape = [points, lines]
         for file in files:
             try:
-                data = Utils.NewFileXYZ(file, shape)
+                data = Files.NewFileXYZ(file, shape)
                 self.openResultWindow(data, 'Z')
             except ValueError:
                 QtWidgets.QMessageBox.question(self,
@@ -306,7 +306,7 @@ class MainWindow(QMainWindow):
     def saveXYZFile(self):
 
         file, _ = QFileDialog.getSaveFileName(self)
-        self.resultsWindows[self.active_result_window].data.saveXYZ(os.path.split(file)[1])
+        self.results_windows[self.active_result_window].data.saveXYZ(os.path.split(file)[1])
 
         
     def getXYZsize(self):
@@ -333,56 +333,64 @@ class MainWindow(QMainWindow):
         self.close()
         
     def undoEdit(self):
-        result=self.resultsWindows[self.active_result_window]
+        result=self.results_windows[self.active_result_window]
         result.undo()
         self._update_menu()
         self._update_push_buttons()
-        self._updateWindows()
+        self.update_windows()
         
     def redoEdit(self):
-        result=self.resultsWindows[self.active_result_window]
+        result=self.results_windows[self.active_result_window]
         result.redo()
         self._update_menu()
         self._update_push_buttons()
-        self._updateWindows()
+        self.update_windows()
 
     def levelEdit(self):
-        if self.resultsWindows != []:
-            result=self.resultsWindows[self.active_result_window]
+        if self.results_windows != []:
+            result=self.results_windows[self.active_result_window]
             result.modifyData(result.data.level_linewise)
             self._update_menu()
             self._update_push_buttons()
-            self._updateWindows()
+            self.update_windows()
 
     def level_planeEdit(self):
-        if self.resultsWindows != []:
-            result=self.resultsWindows[self.active_result_window]
+        if self.results_windows != []:
+            result=self.results_windows[self.active_result_window]
             result.modifyData(result.data.level_plane)
             self._update_menu()
             self._update_push_buttons()
-            self._updateWindows()
+            self.update_windows()
 
     def setZeroLevelEdit(self):
-        result=self.resultsWindows[self.active_result_window]
+        result=self.results_windows[self.active_result_window]
         result.modifyData(result.data.set_zero_level)
         self._update_menu()
         self._update_push_buttons()
-        self._updateWindows()
+        self.update_windows()
         
     def filterEdit(self):
         self.filterWin.show()
-        self._updateWindows()
+        self.update_windows()
         
     def profileEdit(self):
         self.profileWin.show()
-        self.interaction_mode = 'profile'
-        self._updateWindows()
+        self.change_mode('profile')
+        self.update_windows()
 
     def aboutHelp(self):
         QtWidgets.QMessageBox.question(self,
                                        "About",
                                        "STMpro 0.0.5 pre-alpha",
                                        QtWidgets.QMessageBox.Ok)
+
+    def change_mode(self, mode):
+        self.interaction_mode=mode
+        self.update_results()
+
+    def update_results(self):
+        for result in self.results_windows:
+            result.draw()
 
     def eventFilter(self, source, event):
         if event.type() == QtCore.QEvent.WindowActivate:
@@ -397,30 +405,30 @@ class MainWindow(QMainWindow):
                 event.accept()
                 self.filterWin.close()
                 self.profileWin.close()
-                for x in range(len(self.resultsWindows)):
-                    self.resultsWindows[0].close()
+                for x in range(len(self.results_windows)):
+                    self.results_windows[0].close()
 
         return False
 
     def setActiveWindow(self, window = None, close = False):
         if close is False:
-            self.active_result_window = self.resultsWindows.index(window)
+            self.active_result_window = self.results_windows.index(window)
         else:
             self.active_result_window = None
         self._update_menu()
         self._update_push_buttons()
-        self._updateWindows()
+        self.update_windows()
 
     def on_window_activated(self, active_window):
         if active_window:
             if isinstance(active_window, ResultWindow):
                 self.setActiveWindow(window=active_window)
-            self._updateWindows()
+            self.update_windows()
 
 
     def close_result(self, window):
         self.setActiveWindow(close=True)
-        self.resultsWindows.pop(self.resultsWindows.index(window))
+        self.results_windows.pop(self.results_windows.index(window))
 
 
 

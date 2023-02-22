@@ -1,19 +1,12 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Jan 26 22:17:12 2023
-
-@author: marek
-"""
 import matplotlib
-
-matplotlib.use('Qt5Agg')
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import copy
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import QtCore, QtWidgets
 
-
+matplotlib.use('Qt5Agg')
 class ResultWindow(QMainWindow):
     data = None
 
@@ -65,44 +58,27 @@ class ResultWindow(QMainWindow):
 
         super(ResultWindow, self).__init__()
         self.installEventFilter(self)
-        # Creating figure canvas
-        #self.canvas = FigureCanvasColorbar(parent=self, width=width, height=height, dpi=dpi)
-        #self.setCentralWidget(self.canvas)
 
-        # Setting windown name
-        if name == None:
-            self.setWindowTitle(data.filename)
-    '''
-    # Ploting image in axes        
-    def drawPlot(self):
 
-        self.canvas.axesImg.cla()
-        self.canvas.axesColorbar.cla()
-        im = self.canvas.axesImg.pcolormesh(self.data.X * 10 ** 9, self.data.Y * 10 ** 9, self.data.Z * 10 ** 9)
-        self.canvas.fig.colorbar(im, cax=self.canvas.axesColorbar)
-        self.canvas.axesImg.set_aspect('equal')
-        if self.first_point != None:
-            self.first_point.draw_point()
-        if self.profile_lines != []:
-            for x in self.profile_lines:
-                x.draw_profile()
-        self.canvas.draw()
-    '''
+
     def undo(self):
         self.data = self.winState.prevState()
-        self.drawPlot()
+        self.draw()
 
     def redo(self):
         self.data = self.winState.nextState()
-        self.drawPlot()
+        self.draw()
 
     def modifyData(self, method, param=None):
         self.winState.saveState(self.data)
-        if param == None:
+        if param is None:
             method()
         else:
             method(param)
-        self.drawPlot()
+        self.draw()
+
+    def draw(self):
+        pass
 
     # Event handling
     def eventFilter(self, source, event):
@@ -158,19 +134,24 @@ class TopographyWindow(ResultWindow):
 
         self.first_point = None
         self.profile_lines = []
+
+        # Setting window name
+        if name is None:
+            self.setWindowTitle(data.filename)
         self.show()
-        self.drawPlot()
+        self.draw()
 
 
 
-    def drawPlot(self):
+    def draw(self):
         self.canvasImg.axes.cla()
         self.canvasColorbar.axes.cla()
-        im = self.canvasImg.axes.pcolormesh(self.data.Z * 10 ** 9)
+        im = self.canvasImg.axes.pcolormesh(self.data.Z * 10 ** 9,cmap='afmhot')
         self.canvasColorbar.fig.colorbar(im, cax=self.canvasColorbar.axes)
         self.canvasColorbar.axes.set_title(self.data.unit)
         self.canvasImg.axes.set_aspect('equal')
-        self._draw_profile_lines()
+        if self.parent.interaction_mode == 'profile':
+            self._draw_profile_lines()
         self.canvasImg.draw()
         self.canvasColorbar.draw()
 
@@ -189,26 +170,27 @@ class TopographyWindow(ResultWindow):
 
             if self.first_point == None:
                 self.first_point = Point(parent=self, x=e.xdata, y=e.ydata, size=self.point_size)
-                self.drawPlot()
+                self.draw()
             else:
                 second_point = Point(parent=self, x=e.xdata, y=e.ydata, size=self.point_size)
                 profile_line = Profile(parent=self, first_point=self.first_point, second_point=second_point)
                 self.profile_lines.append(profile_line)
                 self.first_point = None
-                self.drawPlot()
+                self.draw()
 
-    def mouse_press_right(self, e, artist):
+    def mouse_press_right(self, e, artist=None):
         if e.inaxes != self.canvasImg.axes:
             return
         if artist == None:
-            return
-        if self.first_point != None:
-            self.first_point=None
+            if self.first_point != None:
+                self.first_point=None
+            else:
+                return
         else:
             for enum, profile in enumerate(self.profile_lines):
                 if profile.first_point.point == artist or profile.second_point.point == artist:
                     self.profile_lines.pop(enum)
-        self.drawPlot()
+        self.draw()
 
     def mouse_release(self, e):
         pass
@@ -222,11 +204,30 @@ class SpectroscopyWindow(ResultWindow):
         self.canvas=FigureCanvas(self)
         self.setCentralWidget(self.canvas)
         self.show()
-        self.drawPlot()
+        self.draw()
 
-    def drawPlot(self):
+    def draw(self):
         self.canvas.axes.cla()
         self.canvas.axes.plot(self.data.V, self.data.currentForw)
+        self.canvas.draw()
+
+class ProfileResultWindow(ResultWindow):
+    def __init__(self, distance=None, profile=None, parent=None, width=4.5, height=4, dpi=100, name=None):
+        super().__init__(None, parent, width, height, dpi, name)
+        self.canvas=FigureCanvas(self)
+        self.setCentralWidget(self.canvas)
+        self.distance=distance
+        self.profile=profile
+        if name is not None:
+            self.setWindowTitle(name)
+        else:
+            self.setWindowTitle('Profile')
+        self.show()
+        self.draw()
+
+    def draw(self):
+        self.canvas.axes.cla()
+        self.canvas.axes.plot(self.distance, self.profile)
         self.canvas.draw()
 
 class FigureCanvas(FigureCanvasQTAgg):
@@ -281,6 +282,8 @@ class FigureCanvasImg(FigureCanvasQTAgg):
     def on_release(self, e):
         if self.artist == None and self.button == 'left':
             self.parent.mouse_press(e)
+        if self.artist == None and self.button == 'right':
+            self.parent.mouse_press_right(e)
         if self.artist != None and self.button =='right':
             self.parent.mouse_press_right(e, self.artist)
         self.button = None
