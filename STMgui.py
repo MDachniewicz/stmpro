@@ -29,16 +29,17 @@ class MainWindow(QMainWindow):
         self._connect_push_buttons()
         self.installEventFilter(self)
 
-        self.results_windows = []
-        self.active_result_window = None
-        self.interaction_mode = None
+        self.results_windows = []  # Array of active results windows
+        self.active_result_window = None  # Variable keeping index of active result window
+        self.interaction_mode = None  # Active interaction mode
+        # Keeping track of active windows, to know if we should update them
         self.profile_win_active = False
         self.hist_win_active = False
-        # Creating filter window
+        # Creating processing windows
         self.filterWin = FilterWindow(self)
         self.profileWin = ProfileWindow(self)
         self.hist_win = HistogramWindow(self)
-        #
+        # First update of menus, buttons and windows
         self._update_menu()
         self._update_push_buttons()
         self.update_windows()
@@ -338,7 +339,7 @@ class MainWindow(QMainWindow):
     # Functions
     def openXYZFile(self):
         options = QFileDialog.Options()
-        files, _ = QFileDialog.getOpenFileNames(self,"Open Files", "", ".xyz Files (*.xyz)",
+        files, _ = QFileDialog.getOpenFileNames(self, "Open Files", "", ".xyz Files (*.xyz)",
                                                 options=options)
         ret, points, lines = self.getXYZsize()
         if ret == False:

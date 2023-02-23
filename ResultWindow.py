@@ -132,6 +132,9 @@ class TopographyWindow(ResultWindow):
         self.setCentralWidget(self.plotting_area)
         self.point_size = 5
 
+
+        self.scale_bar=True
+
         self.first_point = None
         self.profile_lines = []
 
@@ -152,6 +155,9 @@ class TopographyWindow(ResultWindow):
         self.canvasImg.axes.set_aspect('equal')
         if self.parent.interaction_mode == 'profile':
             self._draw_profile_lines()
+        if self.scale_bar==True:
+            self._draw_scale_bar()
+
         self.canvasImg.draw()
         self.canvasColorbar.draw()
 
@@ -162,6 +168,16 @@ class TopographyWindow(ResultWindow):
             for x in self.profile_lines:
                 x.draw_profile()
         self.parent.profileWin.update_plot()
+
+    def _draw_scale_bar(self):
+        shape = self.data.X.shape
+        xrange, _, _ = self.data.get_x_range()
+        length = round(0.2 * xrange)
+        text = str(length) + ' ' + self.data.xunit
+        line = matplotlib.lines.Line2D([round(0.1*shape[0]), round(0.3*shape[0])],[round(0.1*shape[1]), round(0.1*shape[1])],linewidth=0.01*shape[1],color='black')
+        text = matplotlib.text.Text(x=round(0.2*shape[0]), y=round(0.12*shape[1]), text=text, horizontalalignment='center', fontsize = 13)
+        self.canvasImg.axes.add_line(line)
+        self.canvasImg.axes.add_artist(text)
 
     def mouse_press(self, e):
         if e.inaxes != self.canvasImg.axes:

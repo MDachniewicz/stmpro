@@ -125,7 +125,14 @@ class Topography(STMData):
     def get_z_range(self):
         min = np.amin(self.Z)
         max = np.amax(self.Z)
-        return min, max
+        range = max - min
+        return range, min, max
+
+    def get_x_range(self):
+        min = np.amin(self.X)
+        max = np.amax(self.X)
+        range = max-min
+        return range, min, max
 
     # Basic operations
     def set_zero_level(self):
