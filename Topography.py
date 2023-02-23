@@ -24,14 +24,14 @@ class Topography(STMData):
         if filetype == 'xyz':
             self.__initXYZ(data)
 
-
-
     def __initMtrx(self, mtrx, ax):
         self.filetype = mtrx.filetype
         self.parameters = mtrx.parameter
         self.X = mtrx.x
         self.Y = mtrx.y
         self.filename = mtrx.file
+        self.xunit = 'm'
+        self.yunit = 'm'
         if self.filetype == 'Z':
             self.__initMtrxZ(mtrx, ax)
         if self.filetype == 'I':
@@ -39,8 +39,7 @@ class Topography(STMData):
 
     def __initMtrxZ(self, mtrx, ax=0):
         self.unit = 'm'
-        self.xunit = 'm'
-        self.yunit = 'm'
+
         if ax == 0:
             self.Z = mtrx.imageForwUp
             self.name = 'Topography Image Forward-Up ' + mtrx.file
@@ -51,8 +50,6 @@ class Topography(STMData):
         elif ax == 3:
             self.Z = mtrx.imageBackDown
         self.set_zero_level()
-
-
 
     def __initMtrxI(self, mtrx, ax=0):
         self.unit = 'A'

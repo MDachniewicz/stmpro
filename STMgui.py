@@ -137,6 +137,12 @@ class MainWindow(QMainWindow):
         editMenu.addAction(self.undoAction)
         editMenu.addAction(self.redoAction)
         editMenu.addSeparator()
+        basic_operations_menu = editMenu.addMenu("&Basic Operations")
+        basic_operations_menu.addAction(self.rotate_clockwise_action)
+        basic_operations_menu.addAction(self.rotate_anticlockwise_action)
+        basic_operations_menu.addAction(self.mirror_ud_action)
+        basic_operations_menu.addAction(self.mirror_lr_action)
+
         editMenu.addAction(self.setZeroLevelAction)
         editMenu.addAction(self.levelAction)
         editMenu.addAction(self.level_planeAction)
@@ -157,6 +163,11 @@ class MainWindow(QMainWindow):
         # Edit
         self.undoAction = QAction("&Undo", self)
         self.redoAction = QAction("&Redo", self)
+        self.rotate_clockwise_action = QAction("&Rotate clockwise 90°", self)
+        self.rotate_anticlockwise_action = QAction("&Rotate anti-clockwise 90°", self)
+        self.mirror_ud_action = QAction("&Horizontal mirror", self)
+        self.mirror_lr_action = QAction("&Vertical mirror", self)
+
         self.levelAction = QAction("&Level linewise", self)
         self.level_planeAction = QAction("&Level plane", self)
         self.setZeroLevelAction = QAction("&Set Zero Level", self)
@@ -176,6 +187,10 @@ class MainWindow(QMainWindow):
 
         self.redoAction.triggered.connect(self.redoEdit)
         self.undoAction.triggered.connect(self.undoEdit)
+        self.rotate_clockwise_action.triggered.connect(self.rotate_clockwise)
+        self.rotate_anticlockwise_action.triggered.connect(self.rotate_anticlockwise)
+        self.mirror_ud_action.triggered.connect(self.mirror_ud)
+        self.mirror_lr_action.triggered.connect(self.mirror_lr)
         self.setZeroLevelAction.triggered.connect(self.setZeroLevelEdit)
         self.levelAction.triggered.connect(self.levelEdit)
         self.level_planeAction.triggered.connect(self.level_planeEdit)
@@ -219,6 +234,10 @@ class MainWindow(QMainWindow):
 
     def _update_menu(self):
         if self.active_result_window == None:
+            self.rotate_clockwise_action.setDisabled(True)
+            self.rotate_anticlockwise_action.setDisabled(True)
+            self.mirror_ud_action.setDisabled(True)
+            self.mirror_lr_action.setDisabled(True)
             self.levelAction.setDisabled(True)
             self.level_planeAction.setDisabled(True)
             self.setZeroLevelAction.setDisabled(True)
@@ -235,6 +254,10 @@ class MainWindow(QMainWindow):
             if isinstance(active_window, ResultWindow):
                 self.save_png_action.setDisabled(False)
             if isinstance(active_window, TopographyWindow):
+                self.rotate_clockwise_action.setDisabled(False)
+                self.rotate_anticlockwise_action.setDisabled(False)
+                self.mirror_ud_action.setDisabled(False)
+                self.mirror_lr_action.setDisabled(False)
                 self.levelAction.setDisabled(False)
                 self.level_planeAction.setDisabled(False)
                 self.setZeroLevelAction.setDisabled(False)
@@ -243,6 +266,10 @@ class MainWindow(QMainWindow):
                 self.histAction.setDisabled(False)
                 self.saveXYZAction.setDisabled(False)
             if isinstance(active_window, SpectroscopyWindow):
+                self.rotate_clockwise_action.setDisabled(True)
+                self.rotate_anticlockwise_action.setDisabled(True)
+                self.mirror_ud_action.setDisabled(True)
+                self.mirror_lr_action.setDisabled(True)
                 self.levelAction.setDisabled(True)
                 self.level_planeAction.setDisabled(True)
                 self.setZeroLevelAction.setDisabled(True)
@@ -330,7 +357,7 @@ class MainWindow(QMainWindow):
     def saveXYZFile(self):
 
         file, _ = QFileDialog.getSaveFileName(self)
-        self.results_windows[self.active_result_window].data.saveXYZ(os.path.split(file)[1])
+        self.results_windows[self.active_result_window].data.saveXYZ(file)
 
     def save_png(self):
         result_win = self.get_active_window()
@@ -375,6 +402,38 @@ class MainWindow(QMainWindow):
         self._update_menu()
         self._update_push_buttons()
         self.update_windows()
+
+    def rotate_clockwise(self):
+        if self.results_windows != []:
+            result = self.results_windows[self.active_result_window]
+            result.modifyData(result.data.rotate90, 1)
+            self._update_menu()
+            self._update_push_buttons()
+            self.update_windows()
+
+    def rotate_anticlockwise(self):
+        if self.results_windows != []:
+            result = self.results_windows[self.active_result_window]
+            result.modifyData(result.data.rotate90, -1)
+            self._update_menu()
+            self._update_push_buttons()
+            self.update_windows()
+
+    def mirror_ud(self):
+        if self.results_windows != []:
+            result = self.results_windows[self.active_result_window]
+            result.modifyData(result.data.mirror_ud)
+            self._update_menu()
+            self._update_push_buttons()
+            self.update_windows()
+
+    def mirror_lr(self):
+        if self.results_windows != []:
+            result = self.results_windows[self.active_result_window]
+            result.modifyData(result.data.mirror_lr)
+            self._update_menu()
+            self._update_push_buttons()
+            self.update_windows()
 
     def levelEdit(self):
         if self.results_windows != []:
