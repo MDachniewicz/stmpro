@@ -146,7 +146,7 @@ class TopographyWindow(ResultWindow):
     def draw(self):
         self.canvasImg.axes.cla()
         self.canvasColorbar.axes.cla()
-        im = self.canvasImg.axes.pcolormesh(self.data.Z * 10 ** 9,cmap='afmhot')
+        im = self.canvasImg.axes.pcolormesh(self.data.Z,cmap='afmhot')
         self.canvasColorbar.fig.colorbar(im, cax=self.canvasColorbar.axes)
         self.canvasColorbar.axes.set_title(self.data.unit)
         self.canvasImg.axes.set_aspect('equal')
@@ -228,6 +228,25 @@ class ProfileResultWindow(ResultWindow):
     def draw(self):
         self.canvas.axes.cla()
         self.canvas.axes.plot(self.distance, self.profile)
+        self.canvas.draw()
+
+class HistogramResultWindow(ResultWindow):
+    def __init__(self, bins=None, histogram=None, parent=None, width=4.5, height=4, dpi=100, name=None):
+        super().__init__(None, parent, width, height, dpi, name)
+        self.canvas=FigureCanvas(self)
+        self.setCentralWidget(self.canvas)
+        self.bins=bins
+        self.histogram=histogram
+        if name is not None:
+            self.setWindowTitle(name)
+        else:
+            self.setWindowTitle('Histogram')
+        self.show()
+        self.draw()
+
+    def draw(self):
+        self.canvas.axes.cla()
+        self.canvas.axes.stairs(self.histogram, self.bins)
         self.canvas.draw()
 
 class FigureCanvas(FigureCanvasQTAgg):

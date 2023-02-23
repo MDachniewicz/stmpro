@@ -14,7 +14,6 @@ class ProfileWindow(QDialog):
 
         self.installEventFilter(self)
         self.profile_width = 3
-        self._update()
 
     def _setup(self):
         self.setObjectName("Profile Window")
@@ -22,7 +21,7 @@ class ProfileWindow(QDialog):
         self.setWindowTitle("Profile")
 
         self.plotting_area = QtWidgets.QWidget(self)
-        self.plotting_area.setGeometry(QtCore.QRect(20, 20, 700, 300))
+        self.plotting_area.setGeometry(QtCore.QRect(0, 0, 750, 320))
 
         self.plotting_area_layout = QtWidgets.QVBoxLayout(self.plotting_area)
         self.canvas = FigureCanvas(self, 5, 3, 100)
@@ -40,7 +39,8 @@ class ProfileWindow(QDialog):
                 y2 = round(profile.second_point.y)
                 distance, profile=active_window.data.get_profile((x1,y1), (x2, y2), self.profile_width)
                 self.canvas.axes.plot(distance, profile)
-                print('test')
+            self.canvas.axes.set_ylabel(active_window.data.unit)
+            self.canvas.axes.set_xlabel(active_window.data.xunit)
             self.canvas.draw()
 
     def clear_plot(self):
@@ -77,9 +77,6 @@ class ProfileWindow(QDialog):
         self.cancelButton.clicked.connect(self.cancel)
         self.clearButton.clicked.connect(self.clear)
         self.slider.valueChanged.connect(self._update_profile_width)
-
-    def _update(self):
-        pass
 
     def _update_profile_width(self, value):
         self.profile_width = value
@@ -130,4 +127,5 @@ class FigureCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
+        self.axes.set_position([0.1, 0.2, 0.85, 0.78])
         super(FigureCanvas, self).__init__(fig)

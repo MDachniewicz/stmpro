@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QDialog, QSlider, QLabel, QWidget, QMainWindow
 from PyQt5 import QtCore, QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+from ResultWindow import HistogramResultWindow
 
 class HistogramWindow(QDialog):
     def __init__(self, parent):
@@ -13,7 +14,6 @@ class HistogramWindow(QDialog):
 
         self.installEventFilter(self)
         self.n_bins = 40
-        self._update()
 
     def _setup(self):
         self.setObjectName("Histogram Window")
@@ -35,7 +35,6 @@ class HistogramWindow(QDialog):
             hist, bins = active_window.data.histogram(self.n_bins)
             self.canvas.axes.stairs(hist, bins)
             self.canvas.draw()
-            print('test')
 
     def clear_plot(self):
         self.canvas.axes.cla()
@@ -63,9 +62,6 @@ class HistogramWindow(QDialog):
         self.cancelButton.clicked.connect(self.cancel)
         self.spin_box.valueChanged.connect(self._update_n_bins)
 
-    def _update(self):
-        pass
-
     def _update_n_bins(self, value):
         self.n_bins = value
         self.update_plot()
@@ -77,7 +73,10 @@ class HistogramWindow(QDialog):
         self.applyButton.setDisabled(False)
 
     def apply(self):
-        pass
+        active_window = self.parent.results_windows[self.parent.active_result_window]
+        hist, bins = active_window.data.histogram(self.n_bins)
+        histogram_win = HistogramResultWindow(bins=bins, histogram=hist, parent=self.parent)
+        self.parent.results_windows.append(histogram_win)
 
     def cancel(self):
         self.hide()

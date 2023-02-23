@@ -220,6 +220,7 @@ class MainWindow(QMainWindow):
     def _update_menu(self):
         if self.active_result_window == None:
             self.levelAction.setDisabled(True)
+            self.level_planeAction.setDisabled(True)
             self.setZeroLevelAction.setDisabled(True)
             self.filterAction.setDisabled(True)
             self.profileAction.setDisabled(True)
@@ -235,6 +236,7 @@ class MainWindow(QMainWindow):
                 self.save_png_action.setDisabled(False)
             if isinstance(active_window, TopographyWindow):
                 self.levelAction.setDisabled(False)
+                self.level_planeAction.setDisabled(False)
                 self.setZeroLevelAction.setDisabled(False)
                 self.filterAction.setDisabled(False)
                 self.profileAction.setDisabled(False)
@@ -242,6 +244,7 @@ class MainWindow(QMainWindow):
                 self.saveXYZAction.setDisabled(False)
             if isinstance(active_window, SpectroscopyWindow):
                 self.levelAction.setDisabled(True)
+                self.level_planeAction.setDisabled(True)
                 self.setZeroLevelAction.setDisabled(True)
                 self.filterAction.setDisabled(True)
                 self.profileAction.setDisabled(True)
