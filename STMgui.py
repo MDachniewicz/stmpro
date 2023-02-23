@@ -477,7 +477,7 @@ class MainWindow(QMainWindow):
     def aboutHelp(self):
         QtWidgets.QMessageBox.question(self,
                                        "About",
-                                       "STMpro 0.0.5 pre-alpha",
+                                       "STMpro 0.0.6 pre-alpha",
                                        QtWidgets.QMessageBox.Ok)
 
     def change_mode(self, mode):
