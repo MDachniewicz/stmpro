@@ -155,8 +155,9 @@ class TopographyWindow(ResultWindow):
         self.canvasImg.axes.set_aspect('equal')
         if self.parent.interaction_mode == 'profile':
             self._draw_profile_lines()
-        if self.scale_bar==True:
-            self._draw_scale_bar()
+        else:
+            if self.scale_bar==True:
+                self._draw_scale_bar()
 
         self.canvasImg.draw()
         self.canvasColorbar.draw()
@@ -275,7 +276,7 @@ class FigureCanvasColorbar(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
-        self.axes.set_position([0.2, 0.05, 0.2, 0.9])
+        self.axes.set_position([0.15, 0.02, 0.2, 0.87])
         self.axes.tick_params(labelsize=8)
         self.axes.yaxis.get_offset_text().set_fontsize(8)
 
