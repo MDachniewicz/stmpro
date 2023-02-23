@@ -19,7 +19,7 @@ STMpro is still in early development phase, there are many bugs and missing feat
 
 It is planned to:
 - introduce full support for spectroscopy files (I(V), I(Z))
-- add more data processing options
+- expand data processing capabilities
 - improve graphical interface
 - add options to customise the appearance of graphs and images
 
@@ -39,5 +39,12 @@ Windows (8, 10, 11) binaries are available [here](https://github.com/MDachniewic
 For 
 1. Install Python 3.9
 2. Install dependencies <code>pip install -r requirements.txt</code>
-3. Run STM.py <code>python -m STM.py
+3. Run STM.py <code>python -m STM.py</code>
+
+## Usage
+
+### Open file
+
+
+### Profiles
 
