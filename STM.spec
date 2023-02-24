@@ -8,7 +8,7 @@ a = Analysis(
     ['STM.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('icons/*.png', 'icons')],
     hiddenimports=['skimage.measure'],
     hookspath=[],
     hooksconfig={},

@@ -5,7 +5,7 @@ Created on Wed Jun 29 13:41:45 2022
 @author: marek
 """
 
-import os
+import os, sys
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import (QMainWindow, QMenu,
@@ -17,6 +17,11 @@ from FilterWindow import FilterWindow
 from ProfileWindow import ProfileWindow
 from HistogramWindow import HistogramWindow
 
+def resources_path(path):
+    try:
+        return os.path.join(sys._MEIPASS, path)
+    except:
+        return path
 
 class MainWindow(QMainWindow):
 
@@ -47,78 +52,117 @@ class MainWindow(QMainWindow):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("STMpro")
         MainWindow.setWindowTitle("STMpro")
-        MainWindow.setFixedSize(310, 80)
+        MainWindow.setFixedSize(310, 150)
+        button_size = 40
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("central_widget")
 
-        self.grid_layout = QtWidgets.QGridLayout(self.centralwidget)
-        self.grid_layout.setObjectName("gridLayout")
+        self.vertical_layout = QtWidgets.QVBoxLayout(self.centralwidget)
+
+        self.grid_layout1 = QtWidgets.QGridLayout(self.centralwidget)
+        self.grid_layout1.setObjectName("Files Operations")
+
+        self.grid_layout2 = QtWidgets.QGridLayout(self.centralwidget)
+        self.grid_layout2.setObjectName("Topography")
+
+
+        #self.label1 = QtWidgets.QLabel(self.centralwidget, text='Files')
+        self.label2 = QtWidgets.QLabel(self.centralwidget, text='Topography')
+
+        #self.vertical_layout.addWidget(self.label1)
+        self.vertical_layout.addLayout(self.grid_layout1)
+
+        self.vertical_layout.addWidget(self.label2)
+        self.vertical_layout.addLayout(self.grid_layout2)
 
         self.openmtrxButton = QtWidgets.QPushButton(self.centralwidget)
         self.openmtrxButton.setObjectName("openmtrxbutton")
-        self.openmtrxButton.setMinimumSize(QtCore.QSize(50, 50))
-        self.openmtrxButton.setMaximumSize(QtCore.QSize(50, 50))
+        self.openmtrxButton.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.openmtrxButton.setMaximumSize(QtCore.QSize(button_size, button_size))
         self.openmtrxButton.setText("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("icons/open_mtrx.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/open_mtrx.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.openmtrxButton.setIcon(icon)
-        self.openmtrxButton.setIconSize(QtCore.QSize(50, 50))
-        self.grid_layout.addWidget(self.openmtrxButton, 0, 0, 8, 1)
+        self.openmtrxButton.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout1.addWidget(self.openmtrxButton, 0, 0, 8, 1)
 
         self.openxyzButton = QtWidgets.QPushButton(self.centralwidget)
         self.openxyzButton.setObjectName("openmtrxbutton")
-        self.openxyzButton.setMinimumSize(QtCore.QSize(50, 50))
-        self.openxyzButton.setMaximumSize(QtCore.QSize(50, 50))
+        self.openxyzButton.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.openxyzButton.setMaximumSize(QtCore.QSize(button_size, button_size))
         self.openxyzButton.setText("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("icons/open_xyz.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/open_xyz.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.openxyzButton.setIcon(icon)
-        self.openxyzButton.setIconSize(QtCore.QSize(50, 50))
-        self.grid_layout.addWidget(self.openxyzButton, 0, 1, 8, 1)
+        self.openxyzButton.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout1.addWidget(self.openxyzButton, 0, 1, 8, 1)
 
         self.undo_button = QtWidgets.QPushButton(self.centralwidget)
         self.undo_button.setObjectName("undo_button")
-        self.undo_button.setMinimumSize(QtCore.QSize(50, 50))
-        self.undo_button.setMaximumSize(QtCore.QSize(50, 50))
+        self.undo_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.undo_button.setMaximumSize(QtCore.QSize(button_size, button_size))
         self.undo_button.setText("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("icons/undo.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/undo.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.undo_button.setIcon(icon)
-        self.undo_button.setIconSize(QtCore.QSize(50, 50))
-        self.grid_layout.addWidget(self.undo_button, 0, 2, 8, 1)
+        self.undo_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout1.addWidget(self.undo_button, 0, 2, 8, 1)
 
         self.redo_button = QtWidgets.QPushButton(self.centralwidget)
         self.redo_button.setObjectName("redo_button")
-        self.redo_button.setMinimumSize(QtCore.QSize(50, 50))
-        self.redo_button.setMaximumSize(QtCore.QSize(50, 50))
+        self.redo_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.redo_button.setMaximumSize(QtCore.QSize(button_size, button_size))
         self.redo_button.setText("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("icons/redo.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/redo.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.redo_button.setIcon(icon)
         self.redo_button.setIconSize(QtCore.QSize(50, 50))
-        self.grid_layout.addWidget(self.redo_button, 0, 3, 8, 1)
+        self.grid_layout1.addWidget(self.redo_button, 0, 3, 8, 1)
+
+        self.set_zero_button = QtWidgets.QPushButton(self.centralwidget)
+        self.set_zero_button.setObjectName("Set_zeto_button")
+        self.set_zero_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.set_zero_button.setMaximumSize(QtCore.QSize(button_size, button_size))
+        self.set_zero_button.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/set_zero.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.set_zero_button.setIcon(icon)
+        self.set_zero_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout2.addWidget(self.set_zero_button, 0, 0, 8, 1)
 
         self.level_plane_button = QtWidgets.QPushButton(self.centralwidget)
         self.level_plane_button.setObjectName("Level_plane_button")
-        self.level_plane_button.setMinimumSize(QtCore.QSize(50, 50))
-        self.level_plane_button.setMaximumSize(QtCore.QSize(50, 50))
+        self.level_plane_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.level_plane_button.setMaximumSize(QtCore.QSize(button_size, button_size))
         self.level_plane_button.setText("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("icons/level.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/level.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.level_plane_button.setIcon(icon)
-        self.level_plane_button.setIconSize(QtCore.QSize(50, 50))
-        self.grid_layout.addWidget(self.level_plane_button, 0, 4, 8, 1)
+        self.level_plane_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout2.addWidget(self.level_plane_button, 0, 1, 8, 1)
 
         self.level_linewise_button = QtWidgets.QPushButton(self.centralwidget)
         self.level_linewise_button.setObjectName("Level_linewise_button")
-        self.level_linewise_button.setMinimumSize(QtCore.QSize(50, 50))
-        self.level_linewise_button.setMaximumSize(QtCore.QSize(50, 50))
+        self.level_linewise_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.level_linewise_button.setMaximumSize(QtCore.QSize(button_size, button_size))
         self.level_linewise_button.setText("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("icons/level_linewise.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/level_linewise.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.level_linewise_button.setIcon(icon)
-        self.level_linewise_button.setIconSize(QtCore.QSize(50, 50))
-        self.grid_layout.addWidget(self.level_linewise_button, 0, 5, 8, 1)
+        self.level_linewise_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout2.addWidget(self.level_linewise_button, 0, 2, 8, 1)
+
+        self.profile_button = QtWidgets.QPushButton(self.centralwidget)
+        self.profile_button.setObjectName("Profile_button")
+        self.profile_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.profile_button.setMaximumSize(QtCore.QSize(button_size, button_size))
+        self.profile_button.setText("")
+        self.profile_button.setCheckable(True)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/profile.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.profile_button.setIcon(icon)
+        self.profile_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout2.addWidget(self.profile_button, 0, 3, 8, 1)
 
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -144,9 +188,10 @@ class MainWindow(QMainWindow):
         basic_operations_menu.addAction(self.mirror_ud_action)
         basic_operations_menu.addAction(self.mirror_lr_action)
 
+        leveling_menu = editMenu.addMenu("&Leveling")
         editMenu.addAction(self.setZeroLevelAction)
-        editMenu.addAction(self.levelAction)
-        editMenu.addAction(self.level_planeAction)
+        leveling_menu.addAction(self.levelAction)
+        leveling_menu.addAction(self.level_planeAction)
         editMenu.addAction(self.filterAction)
         editMenu.addAction(self.profileAction)
         editMenu.addAction(self.histAction)
@@ -208,6 +253,8 @@ class MainWindow(QMainWindow):
         self.redo_button.clicked.connect(self.redoEdit)
         self.level_linewise_button.clicked.connect(self.levelEdit)
         self.level_plane_button.clicked.connect(self.level_planeEdit)
+        self.set_zero_button.clicked.connect(self.setZeroLevelEdit)
+        self.profile_button.toggled.connect(self.profileEdit)
 
     def _update_push_buttons(self):
         if self.active_result_window == None:
@@ -215,15 +262,21 @@ class MainWindow(QMainWindow):
             self.level_plane_button.setDisabled(True)
             self.undo_button.setDisabled(True)
             self.redo_button.setDisabled(True)
+            self.set_zero_button.setDisabled(True)
+            self.profile_button.setDisabled(True)
 
         else:
             active_window = self.results_windows[self.active_result_window]
             if isinstance(active_window, TopographyWindow):
                 self.level_linewise_button.setDisabled(False)
                 self.level_plane_button.setDisabled(False)
+                self.set_zero_button.setDisabled(False)
+                self.profile_button.setDisabled(False)
             if isinstance(active_window, SpectroscopyWindow):
                 self.level_linewise_button.setDisabled(True)
                 self.level_plane_button.setDisabled(True)
+                self.set_zero_button.setDisabled(True)
+                self.profile_button.setDisabled(True)
             if active_window.winState.undoPossible():
                 self.undo_button.setDisabled(False)
             else:
@@ -464,9 +517,14 @@ class MainWindow(QMainWindow):
         self.update_windows()
 
     def profileEdit(self):
-        self.profileWin.show()
-        self.change_mode('profile')
-        self.profile_win_active = True
+        if not self.profile_win_active:
+            self.profileWin.show()
+            self.change_mode('profile')
+            self.profile_win_active = True
+        else:
+            self.profileWin.hide()
+            self.change_mode(None)
+            self.profile_win_active = False
         self.update_windows()
 
     def hist_edit(self):
