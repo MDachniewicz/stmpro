@@ -18,9 +18,9 @@ class Topography(STMData):
     def __init__(self, filetype, data, ax=0):
         if filetype == 'mtrx':
             self.__initMtrx(data, ax)
-            self.X, self.xunit = self.set_unit(self.X, self.xunit)
-            self.Y, self.yunit = self.set_unit(self.Y, self.yunit)
-            self.Z, self.unit = self.set_unit(self.Z, self.unit)
+            self.X, self.xunit = self.auto_set_unit(self.X, self.xunit)
+            self.Y, self.yunit = self.auto_set_unit(self.Y, self.yunit)
+            self.Z, self.unit = self.auto_set_unit(self.Z, self.unit)
         if filetype == 'xyz':
             self.__initXYZ(data)
 
@@ -198,6 +198,15 @@ class ProfileData(STMData):
     def auto_units(self):
         self.distance, self.xunit = self.update_unit(self.distance, self.xunit)
         self.profile, self.unit = self.update_unit(self.profile, self.unit)
+
+    def set_profile_units(self, xunit, unit):
+        if not self.unit==unit:
+            self.profile=self.set_unit(self.profile, self.unit, unit)
+            self.unit = unit
+        if not self.xunit == xunit:
+            self.distance = self.set_unit(self.distance, self.xunit, xunit)
+            self.xunit = xunit
+
 
     def get_range(self):
         return np.ptp(self.unit_to_si(self.profile, self.unit)[0])

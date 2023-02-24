@@ -139,7 +139,7 @@ class TopographyWindow(ResultWindow):
         self.setCentralWidget(self.plotting_area)
         xrange, _, _ = self.data.get_x_range()
 
-        self.point_size = 0.01*xrange
+        self.point_size = 0.01 * xrange
 
         self.scale_bar = True
 
@@ -265,32 +265,51 @@ class ProfileResultWindow(ResultWindow):
             self.setWindowTitle(name)
         else:
             self.setWindowTitle('Profiles')
-        self.prepare_profiles()
+
+        self.unit, self.xunit = self.get_unit()
+        self.set_profile_units()
         self.show()
         self.draw()
 
     def draw(self):
-        max_xrange=self.profile[0].get_xrange()
-        max_xrange_index = 0
-        max_range=self.profile[0].get_range()
-        max_range_index = 0
+
         self.canvas.axes.cla()
         for enum, prof in enumerate(self.profile):
             self.canvas.axes.plot(prof.distance, prof.profile)
-            if prof.get_xrange()>max_xrange:
-                max_xrange_index=enum
+
+        self.canvas.axes.set_xlabel(self.xunit)
+        self.canvas.axes.set_ylabel(self.unit)
+        self.canvas.draw()
+
+    # Looking for profiles with maximum ranges to set units in output graph
+    def get_unit(self):
+        max_xrange = self.profile[0].get_xrange()
+        max_xrange_index = 0
+        max_range = self.profile[0].get_range()
+        max_range_index = 0
+        for enum, prof in enumerate(self.profile):
+            if prof.get_xrange() > max_xrange:
+                max_xrange_index = enum
                 max_xrange = prof.get_xrange()
             if prof.get_xrange() > max_range:
                 max_range_index = enum
                 max_range = prof.get_range()
+        # Set automatic units on profiles with largest ranges
+        self.profile[max_xrange_index].auto_units()
+        self.profile[max_range_index].auto_units()
+        # Set x-axis and y-axis units
+        xunit = self.profile[max_xrange_index].xunit
+        unit = self.profile[max_range_index].unit
+        return unit, xunit
 
-        self.canvas.axes.set_xlabel(self.profile[max_xrange_index].xunit)
-        self.canvas.axes.set_ylabel(self.profile[max_range_index].unit)
-        self.canvas.draw()
-
-    def prepare_profiles(self):
+    def auto_profile_units(self):
         for prof in self.profile:
             prof.auto_units()
+
+    def set_profile_units(self):
+        for prof in self.profile:
+            prof.set_profile_units(self.xunit, self.unit)
+
 
 class HistogramResultWindow(ResultWindow):
     def __init__(self, bins=None, histogram=None, parent=None, width=4.5, height=4, dpi=100, name=None):

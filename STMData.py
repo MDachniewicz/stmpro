@@ -22,7 +22,7 @@ class STMData:
         else:
             return 'No data'
 
-    def set_unit_xyz(self, array, unit='m'):
+    def auto_set_unit_xyz(self, array, unit='m'):
         min = np.amin(array)
         max = np.amax(array)
         range = max - min
@@ -43,12 +43,12 @@ class STMData:
             return array * self.UNITS_PREFIXES['m'], unit
         return array, unit
 
-    def set_unit(self, array, unit):
+    def auto_set_unit(self, array, unit):
         min = np.amin(array)
         max = np.amax(array)
         range = max - min
         if unit == 'm':
-            array, unit = self.set_unit_xyz(array, unit)
+            array, unit = self.auto_set_unit_xyz(array, unit)
             return array, unit
         if range < 10 ** -9:
             unit = 'p' + unit
@@ -69,13 +69,13 @@ class STMData:
                 unit = ''
             array = array*(1/self.UNITS_PREFIXES[unit[0]])
             unit = 'm'
-            array, unit = self.set_unit(array, unit)
+            array, unit = self.auto_set_unit(array, unit)
             return array, unit
         else:
             if len(unit) == 2:
                 array = array / self.UNITS_PREFIXES[unit[0]]
                 unit = unit[-1]
-            array, unit = self.set_unit(array, unit)
+            array, unit = self.auto_set_unit(array, unit)
             return array, unit
 
     def unit_to_si(self, array, unit):
@@ -91,3 +91,10 @@ class STMData:
                 unit = unit[-1]
             return array, unit
         return array, unit
+
+    def set_unit(self, array, old_unit, new_unit):
+        array, _ = self.unit_to_si(array, old_unit)
+        if new_unit in self.UNITS:
+            return array
+        array = array*self.UNITS_PREFIXES[new_unit[0]]
+        return array
