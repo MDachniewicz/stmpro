@@ -76,7 +76,7 @@ class HistogramWindow(QDialog):
         active_window = self.parent.results_windows[self.parent.active_result_window]
         hist, bins = active_window.data.histogram(self.n_bins)
         histogram_win = HistogramResultWindow(bins=bins, histogram=hist, parent=self.parent)
-        self.parent.results_windows.append(histogram_win)
+        #self.parent.results_windows.append(histogram_win)
 
     def cancel(self):
         self.hide()

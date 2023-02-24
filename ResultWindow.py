@@ -57,6 +57,8 @@ class ResultWindow(QMainWindow):
         self.parent = parent
         self.data = data
         self.winState = self.States(data)
+        if parent is not None:
+            parent.results_windows.append(self)
 
         super(ResultWindow, self).__init__()
         self.installEventFilter(self)
@@ -269,7 +271,11 @@ class ProfileResultWindow(ResultWindow):
 
     def draw(self):
         self.canvas.axes.cla()
-        self.canvas.axes.plot(self.distance, self.profile)
+        if isinstance(self.distance, list):
+            for dist, profile in zip(self.distance, self.profile):
+                self.canvas.axes.plot(dist, profile)
+        else:
+            self.canvas.axes.plot(self.distance, self.profile)
         self.canvas.draw()
 
 

@@ -316,7 +316,7 @@ class MainWindow(QMainWindow):
             win = TopographyWindow(data=data, parent=self)
         if filetype == 'I(V)-curve':
             win = SpectroscopyWindow(data=data, parent=self)
-        self.results_windows.append(win)
+        #self.results_windows.append(win)
         win.show()
 
     def openFile(self):

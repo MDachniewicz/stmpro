@@ -15,6 +15,9 @@ class ProfileWindow(QDialog):
         self.installEventFilter(self)
         self.profile_width = 3
 
+        # If profiles should be opened in separate windows
+        self.separate_profiles = False
+
     def _setup(self):
         self.setObjectName("Profile Window")
         self.setFixedSize(750, 440)
@@ -22,6 +25,8 @@ class ProfileWindow(QDialog):
 
         self.plotting_area = QtWidgets.QWidget(self)
         self.plotting_area.setGeometry(QtCore.QRect(0, 0, 750, 320))
+
+
 
         self.plotting_area_layout = QtWidgets.QVBoxLayout(self.plotting_area)
         self.canvas = FigureCanvas(self, 5, 3, 100)
@@ -57,6 +62,10 @@ class ProfileWindow(QDialog):
         self.profile_width_display = QLabel(f'Profile Width: {3}', self)
         self.profile_width_display.setGeometry(QtCore.QRect(180, 350, 80, 20))
 
+        # Create check box
+        self.checkbox = QtWidgets.QCheckBox(parent=self, text='Separate profiles')
+        self.checkbox.setGeometry(QtCore.QRect(20, 390, 150, 20))
+
         # Create clear button
         self.clearButton = QtWidgets.QPushButton("Clear", self)
         self.clearButton.setGeometry(QtCore.QRect(410, 350, 70, 30))
@@ -77,11 +86,19 @@ class ProfileWindow(QDialog):
         self.cancelButton.clicked.connect(self.cancel)
         self.clearButton.clicked.connect(self.clear)
         self.slider.valueChanged.connect(self._update_profile_width)
+        self.checkbox.toggled.connect(self._update_separate_windows)
+        self.checkbox.setChecked(False)
 
     def _update_profile_width(self, value):
         self.profile_width = value
         self.profile_width_display.setText(f'Profile Width: {value}')
         self.update_plot()
+
+    def _update_separate_windows(self):
+        if self.checkbox.isChecked():
+            self.separate_profiles=True
+        else:
+            self.separate_profiles=False
 
     def disable(self):
         self.applyButton.setDisabled(True)
@@ -93,15 +110,30 @@ class ProfileWindow(QDialog):
 
     def apply(self):
         active_window = self.parent.results_windows[self.parent.active_result_window]
-        for enum, profile in enumerate(active_window.profile_lines):
-            x1 = profile.first_point.x_index
-            x2 = profile.second_point.x_index
-            y1 = profile.first_point.y_index
-            y2 = profile.second_point.y_index
-            distance, profile = active_window.data.get_profile((x1, y1), (x2, y2), self.profile_width)
-            name='Profile' + str(enum)
-            profile_win=ProfileResultWindow(distance=distance, profile=profile, parent=self.parent, name=name)
-            self.parent.results_windows.append(profile_win)
+        if self.separate_profiles:
+            for enum, profile in enumerate(active_window.profile_lines):
+                x1 = profile.first_point.x_index
+                x2 = profile.second_point.x_index
+                y1 = profile.first_point.y_index
+                y2 = profile.second_point.y_index
+                distance, profile = active_window.data.get_profile((x1, y1), (x2, y2), self.profile_width)
+                name='Profile' + str(enum)
+                profile_win=ProfileResultWindow(distance=distance, profile=profile, parent=self.parent, name=name)
+                #self.parent.results_windows.append(profile_win)
+        else:
+            distances = []
+            profiles = []
+            for enum, profile in enumerate(active_window.profile_lines):
+                x1 = profile.first_point.x_index
+                x2 = profile.second_point.x_index
+                y1 = profile.first_point.y_index
+                y2 = profile.second_point.y_index
+                distance, profile = active_window.data.get_profile((x1, y1), (x2, y2), self.profile_width)
+                distances.append(distance)
+                profiles.append(profile)
+            name='Profiles'
+            profile_win=ProfileResultWindow(distance=distances, profile=profiles, parent=self.parent, name=name)
+            #self.parent.results_windows.append(profile_win)
 
     def cancel(self):
         self.hide()

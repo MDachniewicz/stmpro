@@ -158,8 +158,8 @@ class Topography(STMData):
 
     def rotate90(self, k):
         self.Z = np.rot90(self.Z, k)
-        if k % 2 == 1:
-            self.X, self.Y = self.Y, self.X
+        #if k % 2 == 1:
+        #    self.X, self.Y = self.Y, self.X
 
     # Filtering
     def median(self, size):
