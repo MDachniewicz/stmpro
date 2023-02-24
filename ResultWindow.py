@@ -256,28 +256,41 @@ class SpectroscopyWindow(ResultWindow):
 
 
 class ProfileResultWindow(ResultWindow):
-    def __init__(self, distance=None, profile=None, parent=None, width=4.5, height=4, dpi=100, name=None):
+    def __init__(self, profile=None, parent=None, width=4.5, height=4, dpi=100, name=None):
         super().__init__(None, parent, width, height, dpi, name)
         self.canvas = FigureCanvas(self)
         self.setCentralWidget(self.canvas)
-        self.distance = distance
         self.profile = profile
         if name is not None:
             self.setWindowTitle(name)
         else:
-            self.setWindowTitle('Profile')
+            self.setWindowTitle('Profiles')
+        self.prepare_profiles()
         self.show()
         self.draw()
 
     def draw(self):
+        max_xrange=self.profile[0].get_xrange()
+        max_xrange_index = 0
+        max_range=self.profile[0].get_range()
+        max_range_index = 0
         self.canvas.axes.cla()
-        if isinstance(self.distance, list):
-            for dist, profile in zip(self.distance, self.profile):
-                self.canvas.axes.plot(dist, profile)
-        else:
-            self.canvas.axes.plot(self.distance, self.profile)
+        for enum, prof in enumerate(self.profile):
+            self.canvas.axes.plot(prof.distance, prof.profile)
+            if prof.get_xrange()>max_xrange:
+                max_xrange_index=enum
+                max_xrange = prof.get_xrange()
+            if prof.get_xrange() > max_range:
+                max_range_index = enum
+                max_range = prof.get_range()
+
+        self.canvas.axes.set_xlabel(self.profile[max_xrange_index].xunit)
+        self.canvas.axes.set_ylabel(self.profile[max_range_index].unit)
         self.canvas.draw()
 
+    def prepare_profiles(self):
+        for prof in self.profile:
+            prof.auto_units()
 
 class HistogramResultWindow(ResultWindow):
     def __init__(self, bins=None, histogram=None, parent=None, width=4.5, height=4, dpi=100, name=None):

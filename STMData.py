@@ -77,3 +77,17 @@ class STMData:
                 unit = unit[-1]
             array, unit = self.set_unit(array, unit)
             return array, unit
+
+    def unit_to_si(self, array, unit):
+        if unit[-1] == 'm' or unit[0] == 'Å':
+            if unit == 'm':
+                unit = ''
+            array = array*(1/self.UNITS_PREFIXES[unit[0]])
+            unit = 'm'
+            return array, unit
+        else:
+            if len(unit) == 2:
+                array = array / self.UNITS_PREFIXES[unit[0]]
+                unit = unit[-1]
+            return array, unit
+        return array, unit

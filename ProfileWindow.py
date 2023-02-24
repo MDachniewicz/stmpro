@@ -3,6 +3,7 @@ from PyQt5 import QtCore, QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from ResultWindow import ProfileResultWindow
+from Topography import ProfileData
 
 class ProfileWindow(QDialog):
     def __init__(self, parent):
@@ -42,7 +43,7 @@ class ProfileWindow(QDialog):
                 x2 = profile.second_point.x_index
                 y1 = profile.first_point.y_index
                 y2 = profile.second_point.y_index
-                distance, profile=active_window.data.get_profile((x1,y1), (x2, y2), self.profile_width)
+                distance, profile = active_window.data.get_profile((x1,y1), (x2, y2), self.profile_width)
                 self.canvas.axes.plot(distance, profile)
             self.canvas.axes.set_ylabel(active_window.data.unit)
             self.canvas.axes.set_xlabel(active_window.data.xunit)
@@ -110,6 +111,7 @@ class ProfileWindow(QDialog):
 
     def apply(self):
         active_window = self.parent.results_windows[self.parent.active_result_window]
+        unit, xunit, _ = active_window.data.get_units()
         if self.separate_profiles:
             for enum, profile in enumerate(active_window.profile_lines):
                 x1 = profile.first_point.x_index
@@ -118,22 +120,22 @@ class ProfileWindow(QDialog):
                 y2 = profile.second_point.y_index
                 distance, profile = active_window.data.get_profile((x1, y1), (x2, y2), self.profile_width)
                 name='Profile' + str(enum)
-                profile_win=ProfileResultWindow(distance=distance, profile=profile, parent=self.parent, name=name)
-                #self.parent.results_windows.append(profile_win)
+                profile=[ProfileData(distance, profile, unit=unit, xunit=xunit, name=name)]
+                ProfileResultWindow(profile=profile, parent=self.parent, name=name)
         else:
-            distances = []
             profiles = []
+
             for enum, profile in enumerate(active_window.profile_lines):
                 x1 = profile.first_point.x_index
                 x2 = profile.second_point.x_index
                 y1 = profile.first_point.y_index
                 y2 = profile.second_point.y_index
                 distance, profile = active_window.data.get_profile((x1, y1), (x2, y2), self.profile_width)
-                distances.append(distance)
-                profiles.append(profile)
+                name = 'Profile' + str(enum)
+                profiles.append(ProfileData(distance, profile, unit=unit, xunit=xunit, name=name))
             name='Profiles'
-            profile_win=ProfileResultWindow(distance=distances, profile=profiles, parent=self.parent, name=name)
-            #self.parent.results_windows.append(profile_win)
+            ProfileResultWindow(profile=profiles, parent=self.parent, name=name)
+
 
     def cancel(self):
         self.hide()

@@ -134,6 +134,9 @@ class Topography(STMData):
         range = max-min
         return range, min, max
 
+    def get_units(self):
+        return self.unit, self.xunit, self.yunit
+
     # Basic operations
     def set_zero_level(self):
         min_z = np.min(self.Z)
@@ -183,3 +186,21 @@ class Topography(STMData):
         z = self.Z.reshape(-1, 1)
         hist, bin_edges = np.histogram(z, n_bins)
         return hist, bin_edges
+
+class ProfileData(STMData):
+    def __init__(self, distance, profile, xunit, unit, name = None):
+        self.distance = distance
+        self.profile = profile
+        self.filename = name
+        self.unit=unit
+        self.xunit=xunit
+
+    def auto_units(self):
+        self.distance, self.xunit = self.update_unit(self.distance, self.xunit)
+        self.profile, self.unit = self.update_unit(self.profile, self.unit)
+
+    def get_range(self):
+        return np.ptp(self.unit_to_si(self.profile, self.unit)[0])
+
+    def get_xrange(self):
+        return np.ptp(self.unit_to_si(self.distance, self.xunit)[0])
