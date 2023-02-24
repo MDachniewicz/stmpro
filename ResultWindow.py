@@ -7,6 +7,8 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import QtCore, QtWidgets
 
 matplotlib.use('Qt5Agg')
+
+
 class ResultWindow(QMainWindow):
     data = None
 
@@ -60,7 +62,6 @@ class ResultWindow(QMainWindow):
         self.installEventFilter(self)
         self.setStyleSheet("background-color: white;")
 
-
     def undo(self):
         self.data = self.winState.prevState()
         self.draw()
@@ -90,12 +91,14 @@ class ResultWindow(QMainWindow):
             self.parent.close_result(self)
         return False
 
+
 class Profile:
     def __init__(self, parent, first_point, second_point):
-        self.parent=parent
-        self.first_point=first_point
-        self.second_point=second_point
-        self.line=matplotlib.lines.Line2D([self.first_point.x, self.second_point.x],[self.first_point.y, self.second_point.y] )
+        self.parent = parent
+        self.first_point = first_point
+        self.second_point = second_point
+        self.line = matplotlib.lines.Line2D([self.first_point.x, self.second_point.x],
+                                            [self.first_point.y, self.second_point.y])
 
     def draw_profile(self):
         self.first_point.draw_point()
@@ -104,8 +107,10 @@ class Profile:
 
 
 class Point:
-    def __init__(self, parent, x=0, y=0, size=1):
+    def __init__(self, parent, x=0, y=0, x_index=None, y_index=None, size=1):
         self.parent = parent
+        self.x_index = x_index
+        self.y_index = y_index
         self.x = x
         self.y = y
         self.point = matplotlib.patches.Ellipse((x, y), size, size, fc='r', alpha=0.5, edgecolor='r')
@@ -130,10 +135,11 @@ class TopographyWindow(ResultWindow):
         self.canvasColorbar.setMaximumWidth(100)
 
         self.setCentralWidget(self.plotting_area)
-        self.point_size = 5
+        xrange, _, _ = self.data.get_x_range()
 
+        self.point_size = 0.01*xrange
 
-        self.scale_bar=True
+        self.scale_bar = True
 
         self.first_point = None
         self.profile_lines = []
@@ -144,21 +150,18 @@ class TopographyWindow(ResultWindow):
         self.show()
         self.draw()
 
-
-
     def draw(self):
         self.canvasImg.axes.cla()
         self.canvasColorbar.axes.cla()
-        im = self.canvasImg.axes.pcolormesh(self.data.Z,cmap='afmhot')
+        im = self.canvasImg.axes.pcolormesh(self.data.X, self.data.Y, self.data.Z, cmap='afmhot', picker=True)
         self.canvasColorbar.fig.colorbar(im, cax=self.canvasColorbar.axes)
         self.canvasColorbar.axes.set_title(self.data.unit)
         self.canvasImg.axes.set_aspect('equal')
         if self.parent.interaction_mode == 'profile':
             self._draw_profile_lines()
         else:
-            if self.scale_bar==True:
+            if self.scale_bar == True:
                 self._draw_scale_bar()
-
         self.canvasImg.draw()
         self.canvasColorbar.draw()
 
@@ -170,37 +173,57 @@ class TopographyWindow(ResultWindow):
                 x.draw_profile()
         self.parent.profileWin.update_plot()
 
+    def _draw_profile(self, profile):
+        profile.draw_profile()
+        self.canvasImg.draw()
+        self.parent.profileWin.update_plot()
+
+    def _draw_point(self, point):
+        point.draw_point()
+        self.canvasImg.draw()
+
     def _draw_scale_bar(self):
         shape = self.data.X.shape
         xrange, _, _ = self.data.get_x_range()
         length = round(0.2 * xrange)
         text = str(length) + ' ' + self.data.xunit
-        line = matplotlib.lines.Line2D([round(0.1*shape[0]), round(0.3*shape[0])],[round(0.1*shape[1]), round(0.1*shape[1])],linewidth=0.01*shape[1],color='black')
-        text = matplotlib.text.Text(x=round(0.2*shape[0]), y=round(0.12*shape[1]), text=text, horizontalalignment='center', fontsize = 13)
+        x1 = self.data.X[1, round(0.1 * shape[0])]
+        x2 = self.data.X[1, round(0.3 * shape[0])]
+        y1 = self.data.Y[round(0.12 * shape[0]), 1]
+        y2 = self.data.Y[round(0.12 * shape[0]), 1]
+        line = matplotlib.lines.Line2D([x1, x2],
+                                       [y1, y2], linewidth=0.01 * shape[1],
+                                       color='black')
+        text = matplotlib.text.Text(x=self.data.X[1, round(0.2 * shape[0])], y=self.data.Y[round(0.15 * shape[1]), 1],
+                                    text=text,
+                                    horizontalalignment='center', fontsize=13)
         self.canvasImg.axes.add_line(line)
         self.canvasImg.axes.add_artist(text)
 
-    def mouse_press(self, e):
+    def mouse_press(self, e, indices):
         if e.inaxes != self.canvasImg.axes:
             return
         if self.parent.interaction_mode == 'profile':
-
+            line = int(indices / self.data.Z.shape[1])
+            point = int(indices % (self.data.Z.shape[0]))
+            x = self.data.X[line, point]
+            y = self.data.Y[line, point]
             if self.first_point == None:
-                self.first_point = Point(parent=self, x=e.xdata, y=e.ydata, size=self.point_size)
-                self.draw()
+                self.first_point = Point(parent=self, x=x, y=y, x_index=point, y_index=line, size=self.point_size)
+                self._draw_point(self.first_point)
             else:
-                second_point = Point(parent=self, x=e.xdata, y=e.ydata, size=self.point_size)
+                second_point = Point(parent=self, x=x, y=y, x_index=point, y_index=line, size=self.point_size)
                 profile_line = Profile(parent=self, first_point=self.first_point, second_point=second_point)
                 self.profile_lines.append(profile_line)
                 self.first_point = None
-                self.draw()
+                self._draw_profile(profile_line)
 
     def mouse_press_right(self, e, artist=None):
         if e.inaxes != self.canvasImg.axes:
             return
         if artist == None:
             if self.first_point != None:
-                self.first_point=None
+                self.first_point = None
             else:
                 return
         else:
@@ -215,10 +238,11 @@ class TopographyWindow(ResultWindow):
     def mouse_move(self, e):
         pass
 
+
 class SpectroscopyWindow(ResultWindow):
     def __init__(self, data=None, parent=None, width=4.5, height=4, dpi=100, name=None):
         super().__init__(data, parent, width, height, dpi, name)
-        self.canvas=FigureCanvas(self)
+        self.canvas = FigureCanvas(self)
         self.setCentralWidget(self.canvas)
         self.show()
         self.draw()
@@ -228,13 +252,14 @@ class SpectroscopyWindow(ResultWindow):
         self.canvas.axes.plot(self.data.V, self.data.currentForw)
         self.canvas.draw()
 
+
 class ProfileResultWindow(ResultWindow):
     def __init__(self, distance=None, profile=None, parent=None, width=4.5, height=4, dpi=100, name=None):
         super().__init__(None, parent, width, height, dpi, name)
-        self.canvas=FigureCanvas(self)
+        self.canvas = FigureCanvas(self)
         self.setCentralWidget(self.canvas)
-        self.distance=distance
-        self.profile=profile
+        self.distance = distance
+        self.profile = profile
         if name is not None:
             self.setWindowTitle(name)
         else:
@@ -247,13 +272,14 @@ class ProfileResultWindow(ResultWindow):
         self.canvas.axes.plot(self.distance, self.profile)
         self.canvas.draw()
 
+
 class HistogramResultWindow(ResultWindow):
     def __init__(self, bins=None, histogram=None, parent=None, width=4.5, height=4, dpi=100, name=None):
         super().__init__(None, parent, width, height, dpi, name)
-        self.canvas=FigureCanvas(self)
+        self.canvas = FigureCanvas(self)
         self.setCentralWidget(self.canvas)
-        self.bins=bins
-        self.histogram=histogram
+        self.bins = bins
+        self.histogram = histogram
         if name is not None:
             self.setWindowTitle(name)
         else:
@@ -266,11 +292,13 @@ class HistogramResultWindow(ResultWindow):
         self.canvas.axes.stairs(self.histogram, self.bins)
         self.canvas.draw()
 
+
 class FigureCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
         super(FigureCanvas, self).__init__(self.fig)
+
 
 class FigureCanvasColorbar(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -282,6 +310,7 @@ class FigureCanvasColorbar(FigureCanvasQTAgg):
 
         super(FigureCanvasColorbar, self).__init__(self.fig)
 
+
 class FigureCanvasImg(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
@@ -291,6 +320,7 @@ class FigureCanvasImg(FigureCanvasQTAgg):
         self.axes.get_yaxis().set_visible(False)
         self.axes.set_position([0.01, 0.01, 0.98, 0.98])
         self.parent = parent
+        self.indices = [0, 0]
         self.artist = None
         self.button = None
         super(FigureCanvasImg, self).__init__(self.fig)
@@ -308,7 +338,7 @@ class FigureCanvasImg(FigureCanvasQTAgg):
 
     def on_press(self, e):
         if isinstance(e, matplotlib.backend_bases.PickEvent):
-            artist=e.artist
+            artist = e.artist
         if isinstance(e, matplotlib.backend_bases.MouseEvent):
             if e.button == 1:
                 self.button = 'left'
@@ -317,20 +347,19 @@ class FigureCanvasImg(FigureCanvasQTAgg):
 
     def on_release(self, e):
         if self.artist == None and self.button == 'left':
-            self.parent.mouse_press(e)
+            self.parent.mouse_press(e, self.indices)
         if self.artist == None and self.button == 'right':
             self.parent.mouse_press_right(e)
-        if self.artist != None and self.button =='right':
+        if self.artist != None and self.button == 'right':
             self.parent.mouse_press_right(e, self.artist)
         self.button = None
         self.artist = None
-
 
     def on_move(self, e):
         self.parent.mouse_move(e)
 
     def on_pick(self, e):
         if isinstance(e.artist, matplotlib.patches.Ellipse):
-            self.artist=e.artist
-
-
+            self.artist = e.artist
+        if isinstance(e.artist, matplotlib.collections.QuadMesh):
+            self.indices = e.ind

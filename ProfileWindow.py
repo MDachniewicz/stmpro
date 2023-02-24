@@ -33,10 +33,10 @@ class ProfileWindow(QDialog):
         if self.parent.active_result_window != None:
             active_window = self.parent.results_windows[self.parent.active_result_window]
             for profile in active_window.profile_lines:
-                x1 = round(profile.first_point.x)
-                x2 = round(profile.second_point.x)
-                y1 = round(profile.first_point.y)
-                y2 = round(profile.second_point.y)
+                x1 = profile.first_point.x_index
+                x2 = profile.second_point.x_index
+                y1 = profile.first_point.y_index
+                y2 = profile.second_point.y_index
                 distance, profile=active_window.data.get_profile((x1,y1), (x2, y2), self.profile_width)
                 self.canvas.axes.plot(distance, profile)
             self.canvas.axes.set_ylabel(active_window.data.unit)
@@ -94,10 +94,10 @@ class ProfileWindow(QDialog):
     def apply(self):
         active_window = self.parent.results_windows[self.parent.active_result_window]
         for enum, profile in enumerate(active_window.profile_lines):
-            x1 = round(profile.first_point.x)
-            x2 = round(profile.second_point.x)
-            y1 = round(profile.first_point.y)
-            y2 = round(profile.second_point.y)
+            x1 = profile.first_point.x_index
+            x2 = profile.second_point.x_index
+            y1 = profile.first_point.y_index
+            y2 = profile.second_point.y_index
             distance, profile = active_window.data.get_profile((x1, y1), (x2, y2), self.profile_width)
             name='Profile' + str(enum)
             profile_win=ProfileResultWindow(distance=distance, profile=profile, parent=self.parent, name=name)
