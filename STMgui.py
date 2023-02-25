@@ -16,6 +16,7 @@ from ResultWindow import ResultWindow, SpectroscopyWindow, TopographyWindow
 from FilterWindow import FilterWindow
 from ProfileWindow import ProfileWindow
 from HistogramWindow import HistogramWindow
+from FourierWindow import FourierWindow
 
 def resources_path(path):
     try:
@@ -40,10 +41,12 @@ class MainWindow(QMainWindow):
         # Keeping track of active windows, to know if we should update them
         self.profile_win_active = False
         self.hist_win_active = False
+        self.fft_win_active = False
         # Creating processing windows
         self.filterWin = FilterWindow(self)
         self.profileWin = ProfileWindow(self)
         self.hist_win = HistogramWindow(self)
+        self.fft_win = FourierWindow(self)
         # First update of menus, buttons and windows
         self._update_menu()
         self._update_push_buttons()
@@ -195,6 +198,7 @@ class MainWindow(QMainWindow):
         editMenu.addAction(self.filterAction)
         editMenu.addAction(self.profileAction)
         editMenu.addAction(self.histAction)
+        editMenu.addAction(self.fft_action)
         # Help Menu
         helpMenu = menuBar.addMenu("&Help")
         helpMenu.addAction(self.aboutAction)
@@ -220,6 +224,7 @@ class MainWindow(QMainWindow):
         self.filterAction = QAction("&Filter...", self)
         self.profileAction = QAction("Profile...", self)
         self.histAction = QAction("Histogram...", self)
+        self.fft_action = QAction("FFT...", self)
         # Help
         self.helpContentAction = QAction("&Help Content", self)
         self.aboutAction = QAction("&About", self)
@@ -243,6 +248,7 @@ class MainWindow(QMainWindow):
         self.filterAction.triggered.connect(self.filterEdit)
         self.profileAction.triggered.connect(self.profileEdit)
         self.histAction.triggered.connect(self.hist_edit)
+        self.fft_action.triggered.connect(self.fft_edit)
 
         self.aboutAction.triggered.connect(self.aboutHelp)
 
@@ -529,6 +535,11 @@ class MainWindow(QMainWindow):
     def hist_edit(self):
         self.hist_win.show()
         self.hist_win_active = True
+        self.update_windows()
+
+    def fft_edit(self):
+        self.fft_win.show()
+        self.fft_win_active = True
         self.update_windows()
 
     def aboutHelp(self):
