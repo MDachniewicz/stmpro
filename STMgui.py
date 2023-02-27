@@ -353,6 +353,9 @@ class MainWindow(QMainWindow):
             self.profileWin.clear_plot()
             self.hist_win.disable()
             self.hist_win.clear_plot()
+            self.fft_win.disable()
+            self.fft_win.clear_plot()
+
         else:
             active_window = self.results_windows[self.active_result_window]
             if isinstance(active_window, TopographyWindow):
@@ -363,12 +366,18 @@ class MainWindow(QMainWindow):
                 self.hist_win.enable()
                 if self.hist_win_active:
                     self.hist_win.update_plot()
+                self.fft_win.enable()
+                if self.fft_win_active:
+                    self.fft_win.update_img()
+
             else:
                 self.filterWin.disable()
                 self.profileWin.disable()
                 self.profileWin.clear_plot()
                 self.hist_win.disable()
                 self.hist_win.clear_plot()
+                self.fft_win.disable()
+                self.fft_win.clear_plot()
 
     def openResultWindow(self, data, filetype):
         if filetype == 'Z' or filetype == 'I':
@@ -446,6 +455,7 @@ class MainWindow(QMainWindow):
         self.profileWin.close()
         self.hist_win.close()
         self.filterWin.close()
+        self.fft_win.close()
         self.close()
 
     def undoEdit(self):
@@ -570,6 +580,7 @@ class MainWindow(QMainWindow):
                 self.filterWin.close()
                 self.profileWin.close()
                 self.hist_win.close()
+                self.fft_win.close()
                 for x in range(len(self.results_windows)):
                     self.results_windows[0].close()
 

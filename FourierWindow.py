@@ -2,8 +2,8 @@ from PyQt5.QtWidgets import QDialog, QSlider, QLabel, QWidget, QMainWindow
 from PyQt5 import QtCore, QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-from ResultWindow import ProfileResultWindow
-from Topography import ProfileData
+from ResultWindow import TopographyWindow
+from Images import fft_image
 
 
 class FourierWindow(QDialog):
@@ -33,18 +33,27 @@ class FourierWindow(QDialog):
 
         self.plotting_area_layout = QtWidgets.QHBoxLayout(self.plotting_area)
 
-        self.canvas = FigureCanvas(self, 5, 3, 100)
-        self.canvas_fft = FigureCanvas(self, 5, 3, 100)
-        self.plotting_area_layout.addWidget(self.canvas)
+        self.canvas_img = FigureCanvas(self, 5, 5, 100)
+        self.canvas_fft = FigureCanvas(self, 5, 5, 100)
+        self.plotting_area_layout.addWidget(self.canvas_img)
         self.plotting_area_layout.addWidget(self.canvas_fft)
-        self.update_plot()
+        self.update_img()
 
-    def update_plot(self):
-        pass
+    def update_img(self):
+        self.canvas_img.axes.cla()
+        if self.parent.active_result_window != None:
+            active_window = self.parent.results_windows[self.parent.active_result_window]
+            if isinstance(active_window, TopographyWindow):
+                self.canvas_img.axes.pcolormesh(active_window.data.X, active_window.data.Y, active_window.data.Z, cmap='afmhot')
+                self.canvas_img.draw()
+                self.canvas_img.axes.set_aspect('equal')
+                self.canvas_fft.axes.pcolormesh(fft_image(active_window.data.Z), cmap='afmhot')
+                self.canvas_fft.draw()
+                self.canvas_img.axes.set_aspect('equal')
 
     def clear_plot(self):
-        self.canvas.axes.cla()
-        self.canvas.draw()
+        self.canvas_img.axes.cla()
+        self.canvas_img.draw()
 
     def _createActions(self):
         # Create clear button
@@ -88,7 +97,7 @@ class FourierWindow(QDialog):
     def eventFilter(self, source, event):
         # Calling parent closing function on close
         if event.type() == QtCore.QEvent.Hide:
-            self.parent.fft_win = False
+            self.parent.fft_win_active = False
         return False
 
 
@@ -96,5 +105,8 @@ class FigureCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
-        self.axes.set_position([0.1, 0.2, 0.85, 0.78])
+        self.axes.set_axis_off()
+        self.axes.get_xaxis().set_visible(False)
+        self.axes.get_yaxis().set_visible(False)
+        self.axes.set_position([0.01, 0.01, 0.98, 0.98])
         super(FigureCanvas, self).__init__(fig)

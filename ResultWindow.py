@@ -162,7 +162,7 @@ class TopographyWindow(ResultWindow):
         if self.parent.interaction_mode == 'profile':
             self._draw_profile_lines()
         else:
-            if self.scale_bar == True:
+            if self.scale_bar:
                 self._draw_scale_bar()
         self.canvasImg.draw()
         self.canvasColorbar.draw()
