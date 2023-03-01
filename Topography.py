@@ -19,7 +19,8 @@ class Topography(STMData):
         if filetype == 'mtrx':
             self.__initMtrx(data, ax)
             self.X, self.xunit = self.auto_set_unit(self.X, self.xunit)
-            self.Y, self.yunit = self.auto_set_unit(self.Y, self.yunit)
+            self.Y = self.set_unit(self.Y, 'm', self.xunit)
+            self.yunit=self.xunit
             self.Z, self.unit = self.auto_set_unit(self.Z, self.unit)
         if filetype == 'xyz':
             self.__initXYZ(data)
@@ -157,7 +158,8 @@ class Topography(STMData):
         self.Z = self.Z * factors[2]
         self.Z, self.unit = self.update_unit(self.Z, self.unit)
         self.X, self.xunit = self.update_unit(self.X, self.xunit)
-        self.Y, _ = self.update_unit(self.Y, self.xunit)
+        self.Y = self.set_unit(self.Y, self.yunit, self.xunit)
+        self.yunit=self.xunit
 
     def mirror_ud(self):
         self.Z = np.flipud(self.Z)

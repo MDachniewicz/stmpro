@@ -81,9 +81,8 @@ class STMData:
 
     def unit_to_si(self, array, unit):
         if unit[-1] == 'm' or unit[0] == 'Å':
-            if unit == 'm':
-                unit = ''
-            array = array*(1/self.UNITS_PREFIXES[unit[0]])
+            if unit != 'm':
+                array = array*(1/self.UNITS_PREFIXES[unit[0]])
             unit = 'm'
             return array, unit
         else:

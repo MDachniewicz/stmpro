@@ -1,5 +1,6 @@
-from PyQt5.QtWidgets import QMainWindow, QDialog, QComboBox, QSlider, QLabel
 from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtWidgets import QMainWindow
+
 import ResultWindow
 
 
