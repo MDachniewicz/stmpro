@@ -126,13 +126,19 @@ class Topography(STMData):
         min = np.amin(self.Z)
         max = np.amax(self.Z)
         range = max - min
-        return range, min, max
+        return range
 
     def get_x_range(self):
         min = np.amin(self.X)
         max = np.amax(self.X)
         range = max-min
-        return range, min, max
+        return range
+
+    def get_y_range(self):
+        min = np.amin(self.Y)
+        max = np.amax(self.Y)
+        range = max - min
+        return range
 
     def get_units(self):
         return self.unit, self.xunit, self.yunit
@@ -145,13 +151,13 @@ class Topography(STMData):
     def change_level(self, z):
         self.Z += z
 
-    def scale(self, x_factor, y_factor, z_factor):
-        self.X *= x_factor
-        self.Y *= y_factor
-        self.Z *= z_factor
+    def scale(self, factors):
+        self.X = self.X * factors[0]
+        self.Y = self.Y * factors[1]
+        self.Z = self.Z * factors[2]
         self.Z, self.unit = self.update_unit(self.Z, self.unit)
-        self.X, self.xunit = self.update_unit(self.Z, self.unit)
-        self.Y, _ = self.update_unit(self.Z, self.unit)
+        self.X, self.xunit = self.update_unit(self.X, self.xunit)
+        self.Y, _ = self.update_unit(self.Y, self.xunit)
 
     def mirror_ud(self):
         self.Z = np.flipud(self.Z)

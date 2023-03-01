@@ -47,7 +47,7 @@ class FourierWindow(QDialog):
                 self.canvas_img.axes.pcolormesh(active_window.data.X, active_window.data.Y, active_window.data.Z, cmap='afmhot')
                 self.canvas_img.draw()
                 self.canvas_img.axes.set_aspect('equal')
-                self.canvas_fft.axes.pcolormesh(fft_image(active_window.data.Z), cmap='afmhot')
+                self.canvas_fft.axes.pcolormesh(fft_image(active_window.data.Z))
                 self.canvas_fft.draw()
                 self.canvas_img.axes.set_aspect('equal')
 
@@ -110,3 +110,5 @@ class FigureCanvas(FigureCanvasQTAgg):
         self.axes.get_yaxis().set_visible(False)
         self.axes.set_position([0.01, 0.01, 0.98, 0.98])
         super(FigureCanvas, self).__init__(fig)
+
+

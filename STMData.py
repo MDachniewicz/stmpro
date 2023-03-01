@@ -62,6 +62,7 @@ class STMData:
         if 10 ** -3 <= range < 10 ** -1:
             unit = 'm' + unit
             return array * self.UNITS_PREFIXES['m'], unit
+        return array, unit
 
     def update_unit(self, array, unit):
         if unit[-1] == 'm' or unit[0] == 'Å':

@@ -137,7 +137,7 @@ class TopographyWindow(ResultWindow):
         self.canvasColorbar.setMaximumWidth(100)
 
         self.setCentralWidget(self.plotting_area)
-        xrange, _, _ = self.data.get_x_range()
+        xrange = self.data.get_x_range()
 
         self.point_size = 0.01 * xrange
 
@@ -186,7 +186,7 @@ class TopographyWindow(ResultWindow):
 
     def _draw_scale_bar(self):
         shape = self.data.X.shape
-        xrange, _, _ = self.data.get_x_range()
+        xrange = self.data.get_x_range()
         length = round(0.2 * xrange)
         text = str(length) + ' ' + self.data.xunit
         x1 = self.data.X[1, round(0.1 * shape[0])]
