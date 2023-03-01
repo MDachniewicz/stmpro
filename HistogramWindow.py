@@ -33,7 +33,7 @@ class HistogramWindow(QDialog):
         if self.parent.active_result_window is not None:
             active_window = self.parent.results_windows[self.parent.active_result_window]
             hist, bins = active_window.data.histogram(self.n_bins)
-            self.canvas.axes.stairs(hist, bins)
+            self.canvas.axes.stairs(hist, bins, fill=True)
             self.canvas.draw()
 
     def clear_plot(self):

@@ -327,7 +327,7 @@ class HistogramResultWindow(ResultWindow):
 
     def draw(self):
         self.canvas.axes.cla()
-        self.canvas.axes.stairs(self.histogram, self.bins)
+        self.canvas.axes.stairs(self.histogram, self.bins, fill=True)
         self.canvas.draw()
 
 
