@@ -17,6 +17,7 @@ from FilterWindow import FilterWindow
 from ProfileWindow import ProfileWindow
 from HistogramWindow import HistogramWindow
 from FourierWindow import FourierWindow
+from ScaleWindow import ScaleWindow
 
 def resources_path(path):
     try:
@@ -42,11 +43,13 @@ class MainWindow(QMainWindow):
         self.profile_win_active = False
         self.hist_win_active = False
         self.fft_win_active = False
+        self.scale_win_active = False
         # Creating processing windows
         self.filterWin = FilterWindow(self)
         self.profileWin = ProfileWindow(self)
         self.hist_win = HistogramWindow(self)
         self.fft_win = FourierWindow(self)
+        self.scale_win = ScaleWindow(self)
         # First update of menus, buttons and windows
         self._update_menu()
         self._update_push_buttons()
@@ -186,6 +189,7 @@ class MainWindow(QMainWindow):
         editMenu.addAction(self.redoAction)
         editMenu.addSeparator()
         basic_operations_menu = editMenu.addMenu("&Basic Operations")
+        basic_operations_menu.addAction(self.scale_action)
         basic_operations_menu.addAction(self.rotate_clockwise_action)
         basic_operations_menu.addAction(self.rotate_anticlockwise_action)
         basic_operations_menu.addAction(self.mirror_ud_action)
@@ -213,6 +217,8 @@ class MainWindow(QMainWindow):
         # Edit
         self.undoAction = QAction("&Undo", self)
         self.redoAction = QAction("&Redo", self)
+
+        self.scale_action = QAction("&Scale...", self)
         self.rotate_clockwise_action = QAction("&Rotate clockwise 90°", self)
         self.rotate_anticlockwise_action = QAction("&Rotate anti-clockwise 90°", self)
         self.mirror_ud_action = QAction("&Horizontal mirror", self)
@@ -238,6 +244,7 @@ class MainWindow(QMainWindow):
 
         self.redoAction.triggered.connect(self.redoEdit)
         self.undoAction.triggered.connect(self.undoEdit)
+        self.scale_action.triggered.connect(self.scale)
         self.rotate_clockwise_action.triggered.connect(self.rotate_clockwise)
         self.rotate_anticlockwise_action.triggered.connect(self.rotate_anticlockwise)
         self.mirror_ud_action.triggered.connect(self.mirror_ud)
@@ -304,6 +311,8 @@ class MainWindow(QMainWindow):
             self.filterAction.setDisabled(True)
             self.profileAction.setDisabled(True)
             self.histAction.setDisabled(True)
+            self.fft_action.setDisabled(True)
+            self.scale_action.setDisabled(True)
             self.saveXYZAction.setDisabled(True)
             self.save_png_action.setDisabled(True)
             self.undoAction.setDisabled(True)
@@ -314,6 +323,7 @@ class MainWindow(QMainWindow):
             if isinstance(active_window, ResultWindow):
                 self.save_png_action.setDisabled(False)
             if isinstance(active_window, TopographyWindow):
+                self.scale_action.setDisabled(False)
                 self.rotate_clockwise_action.setDisabled(False)
                 self.rotate_anticlockwise_action.setDisabled(False)
                 self.mirror_ud_action.setDisabled(False)
@@ -324,8 +334,10 @@ class MainWindow(QMainWindow):
                 self.filterAction.setDisabled(False)
                 self.profileAction.setDisabled(False)
                 self.histAction.setDisabled(False)
+                self.fft_action.setDisabled(False)
                 self.saveXYZAction.setDisabled(False)
             if isinstance(active_window, SpectroscopyWindow):
+                self.scale_action.setDisabled(True)
                 self.rotate_clockwise_action.setDisabled(True)
                 self.rotate_anticlockwise_action.setDisabled(True)
                 self.mirror_ud_action.setDisabled(True)
@@ -336,6 +348,7 @@ class MainWindow(QMainWindow):
                 self.filterAction.setDisabled(True)
                 self.profileAction.setDisabled(True)
                 self.histAction.setDisabled(True)
+                self.fft_action.setDisabled(True)
                 self.saveXYZAction.setDisabled(True)
             if active_window.winState.undoPossible():
                 self.undoAction.setDisabled(False)
@@ -355,11 +368,15 @@ class MainWindow(QMainWindow):
             self.hist_win.clear_plot()
             self.fft_win.disable()
             self.fft_win.clear_plot()
+            self.scale_win.disable()
+
 
         else:
             active_window = self.results_windows[self.active_result_window]
             if isinstance(active_window, TopographyWindow):
                 self.filterWin.enable()
+                self.scale_win.enable()
+                self.scale_win.update()
                 self.profileWin.enable()
                 if self.profile_win_active:
                     self.profileWin.update_plot()
@@ -378,6 +395,7 @@ class MainWindow(QMainWindow):
                 self.hist_win.clear_plot()
                 self.fft_win.disable()
                 self.fft_win.clear_plot()
+                self.scale_win.disable()
 
     def openResultWindow(self, data, filetype):
         if filetype == 'Z' or filetype == 'I':
@@ -470,6 +488,10 @@ class MainWindow(QMainWindow):
         result.redo()
         self._update_menu()
         self._update_push_buttons()
+        self.update_windows()
+
+    def scale(self):
+        self.scale_win.show()
         self.update_windows()
 
     def rotate_clockwise(self):
@@ -569,21 +591,26 @@ class MainWindow(QMainWindow):
     def eventFilter(self, source, event):
         if event.type() == QtCore.QEvent.WindowActivate:
             self.on_window_activated(self)
+            return False
+
         if event.type() == QtCore.QEvent.Close:
             answer = QtWidgets.QMessageBox.question(self,
                                                     "Confirm Exit...",
                                                     "Are you sure you want to exit?\nAll data will be lost.",
                                                     QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
-            event.ignore()
             if answer == QtWidgets.QMessageBox.Yes:
                 event.accept()
                 self.filterWin.close()
                 self.profileWin.close()
                 self.hist_win.close()
                 self.fft_win.close()
+                self.scale_win.close()
                 for x in range(len(self.results_windows)):
                     self.results_windows[0].close()
-
+                return False
+            else:
+                event.ignore()
+                return True
         return False
 
     def setActiveWindow(self, window=None, close=False):
