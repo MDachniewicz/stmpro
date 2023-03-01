@@ -20,7 +20,7 @@ class Topography(STMData):
             self.__initMtrx(data, ax)
             self.X, self.xunit = self.auto_set_unit(self.X, self.xunit)
             self.Y = self.set_unit(self.Y, 'm', self.xunit)
-            self.yunit=self.xunit
+            self.yunit = self.xunit
             self.Z, self.unit = self.auto_set_unit(self.Z, self.unit)
         if filetype == 'xyz':
             self.__initXYZ(data)
@@ -132,7 +132,7 @@ class Topography(STMData):
     def get_x_range(self):
         min = np.amin(self.X)
         max = np.amax(self.X)
-        range = max-min
+        range = max - min
         return range
 
     def get_y_range(self):
@@ -159,7 +159,7 @@ class Topography(STMData):
         self.Z, self.unit = self.update_unit(self.Z, self.unit)
         self.X, self.xunit = self.update_unit(self.X, self.xunit)
         self.Y = self.set_unit(self.Y, self.yunit, self.xunit)
-        self.yunit=self.xunit
+        self.yunit = self.xunit
 
     def mirror_ud(self):
         self.Z = np.flipud(self.Z)
@@ -169,8 +169,8 @@ class Topography(STMData):
 
     def rotate90(self, k):
         self.Z = np.rot90(self.Z, k)
-        #if k % 2 == 1:
-        #    self.X, self.Y = self.Y, self.X
+        if k % 2 != 0:
+            self.X, self.Y = np.rot90(self.Y), np.rot90(self.X, 3)
 
     # Filtering
     def median(self, size):
@@ -195,26 +195,26 @@ class Topography(STMData):
         hist, bin_edges = np.histogram(z, n_bins)
         return hist, bin_edges
 
+
 class ProfileData(STMData):
-    def __init__(self, distance, profile, xunit, unit, name = None):
+    def __init__(self, distance, profile, xunit, unit, name=None):
         self.distance = distance
         self.profile = profile
         self.filename = name
-        self.unit=unit
-        self.xunit=xunit
+        self.unit = unit
+        self.xunit = xunit
 
     def auto_units(self):
         self.distance, self.xunit = self.update_unit(self.distance, self.xunit)
         self.profile, self.unit = self.update_unit(self.profile, self.unit)
 
     def set_profile_units(self, xunit, unit):
-        if not self.unit==unit:
-            self.profile=self.set_unit(self.profile, self.unit, unit)
+        if not self.unit == unit:
+            self.profile = self.set_unit(self.profile, self.unit, unit)
             self.unit = unit
         if not self.xunit == xunit:
             self.distance = self.set_unit(self.distance, self.xunit, xunit)
             self.xunit = xunit
-
 
     def get_range(self):
         return np.ptp(self.unit_to_si(self.profile, self.unit)[0])
