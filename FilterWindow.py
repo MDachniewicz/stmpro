@@ -19,7 +19,7 @@ class FilterWindow(QDialog):
         self._setup(self)
         self._createActions()
         self._connectActions()
-
+        self.installEventFilter(self)
         self.active_filter = 0
         self._update()
 
@@ -85,6 +85,15 @@ class FilterWindow(QDialog):
     def cancel(self):
         self.hide()
 
+
     def index_changed(self, i):
         self.active_filter = i
         self._update()
+
+    # Event handling
+    def eventFilter(self, source, event):
+        # Calling parent closing function on close
+        if event.type() == QtCore.QEvent.Hide:
+            self.parent.filter_win_active = False
+            self.parent.filter_button.setChecked(False)
+        return False

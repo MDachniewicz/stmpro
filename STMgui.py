@@ -41,6 +41,7 @@ class MainWindow(QMainWindow):
         self.interaction_mode = None  # Active interaction mode
         # Keeping track of active windows, to know if we should update them
         self.profile_win_active = False
+        self.filter_win_active = False
         self.hist_win_active = False
         self.fft_win_active = False
         self.scale_win_active = False
@@ -58,7 +59,7 @@ class MainWindow(QMainWindow):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("STMpro")
         MainWindow.setWindowTitle("STMpro")
-        MainWindow.setFixedSize(310, 150)
+        MainWindow.setFixedSize(310, 200)
         button_size = 40
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("central_widget")
@@ -70,11 +71,16 @@ class MainWindow(QMainWindow):
 
         self.grid_layout2 = QtWidgets.QGridLayout(self.centralwidget)
         self.grid_layout2.setObjectName("Topography")
+        #self.grid_layout2.setHorizontalSpacing(10)
+        #self.grid_layout2.setVerticalSpacing(80)
+        #self.grid_layout2.setContentsMargins(11, 11, 11, 11)
+        #self.grid_layout2.setSpacing(60)
 
 
         #self.label1 = QtWidgets.QLabel(self.centralwidget, text='Files')
         self.label2 = QtWidgets.QLabel(self.centralwidget, text='Topography')
-
+        self.label2.setMinimumSize(QtCore.QSize(200,20))
+        self.label2.setMaximumSize(QtCore.QSize(200,20))
         #self.vertical_layout.addWidget(self.label1)
         self.vertical_layout.addLayout(self.grid_layout1)
 
@@ -90,7 +96,7 @@ class MainWindow(QMainWindow):
         icon.addPixmap(QtGui.QPixmap(resources_path("icons/open_mtrx.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.openmtrxButton.setIcon(icon)
         self.openmtrxButton.setIconSize(QtCore.QSize(button_size, button_size))
-        self.grid_layout1.addWidget(self.openmtrxButton, 0, 0, 8, 1)
+        self.grid_layout1.addWidget(self.openmtrxButton, 0, 0, 1, 1)
 
         self.openxyzButton = QtWidgets.QPushButton(self.centralwidget)
         self.openxyzButton.setObjectName("openmtrxbutton")
@@ -101,7 +107,7 @@ class MainWindow(QMainWindow):
         icon.addPixmap(QtGui.QPixmap(resources_path("icons/open_xyz.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.openxyzButton.setIcon(icon)
         self.openxyzButton.setIconSize(QtCore.QSize(button_size, button_size))
-        self.grid_layout1.addWidget(self.openxyzButton, 0, 1, 8, 1)
+        self.grid_layout1.addWidget(self.openxyzButton, 0, 1, 1, 1)
 
         self.undo_button = QtWidgets.QPushButton(self.centralwidget)
         self.undo_button.setObjectName("undo_button")
@@ -112,7 +118,7 @@ class MainWindow(QMainWindow):
         icon.addPixmap(QtGui.QPixmap(resources_path("icons/undo.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.undo_button.setIcon(icon)
         self.undo_button.setIconSize(QtCore.QSize(button_size, button_size))
-        self.grid_layout1.addWidget(self.undo_button, 0, 2, 8, 1)
+        self.grid_layout1.addWidget(self.undo_button, 0, 2, 1, 1)
 
         self.redo_button = QtWidgets.QPushButton(self.centralwidget)
         self.redo_button.setObjectName("redo_button")
@@ -123,7 +129,7 @@ class MainWindow(QMainWindow):
         icon.addPixmap(QtGui.QPixmap(resources_path("icons/redo.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.redo_button.setIcon(icon)
         self.redo_button.setIconSize(QtCore.QSize(50, 50))
-        self.grid_layout1.addWidget(self.redo_button, 0, 3, 8, 1)
+        self.grid_layout1.addWidget(self.redo_button, 0, 3, 1, 1)
 
         self.set_zero_button = QtWidgets.QPushButton(self.centralwidget)
         self.set_zero_button.setObjectName("Set_zeto_button")
@@ -134,29 +140,7 @@ class MainWindow(QMainWindow):
         icon.addPixmap(QtGui.QPixmap(resources_path("icons/set_zero.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.set_zero_button.setIcon(icon)
         self.set_zero_button.setIconSize(QtCore.QSize(button_size, button_size))
-        self.grid_layout2.addWidget(self.set_zero_button, 0, 0, 8, 1)
-
-        self.level_plane_button = QtWidgets.QPushButton(self.centralwidget)
-        self.level_plane_button.setObjectName("Level_plane_button")
-        self.level_plane_button.setMinimumSize(QtCore.QSize(button_size, button_size))
-        self.level_plane_button.setMaximumSize(QtCore.QSize(button_size, button_size))
-        self.level_plane_button.setText("")
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(resources_path("icons/level.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.level_plane_button.setIcon(icon)
-        self.level_plane_button.setIconSize(QtCore.QSize(button_size, button_size))
-        self.grid_layout2.addWidget(self.level_plane_button, 0, 1, 8, 1)
-
-        self.level_linewise_button = QtWidgets.QPushButton(self.centralwidget)
-        self.level_linewise_button.setObjectName("Level_linewise_button")
-        self.level_linewise_button.setMinimumSize(QtCore.QSize(button_size, button_size))
-        self.level_linewise_button.setMaximumSize(QtCore.QSize(button_size, button_size))
-        self.level_linewise_button.setText("")
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(resources_path("icons/level_linewise.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.level_linewise_button.setIcon(icon)
-        self.level_linewise_button.setIconSize(QtCore.QSize(button_size, button_size))
-        self.grid_layout2.addWidget(self.level_linewise_button, 0, 2, 8, 1)
+        self.grid_layout2.addWidget(self.set_zero_button, 0, 0, 1, 1)
 
         self.profile_button = QtWidgets.QPushButton(self.centralwidget)
         self.profile_button.setObjectName("Profile_button")
@@ -168,7 +152,111 @@ class MainWindow(QMainWindow):
         icon.addPixmap(QtGui.QPixmap(resources_path("icons/profile.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.profile_button.setIcon(icon)
         self.profile_button.setIconSize(QtCore.QSize(button_size, button_size))
-        self.grid_layout2.addWidget(self.profile_button, 0, 3, 8, 1)
+        self.grid_layout2.addWidget(self.profile_button, 0, 1, 1, 1)
+
+        self.level_plane_button = QtWidgets.QPushButton(self.centralwidget)
+        self.level_plane_button.setObjectName("Level_plane_button")
+        self.level_plane_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.level_plane_button.setMaximumSize(QtCore.QSize(button_size, button_size))
+        self.level_plane_button.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/level.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.level_plane_button.setIcon(icon)
+        self.level_plane_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout2.addWidget(self.level_plane_button, 0, 2, 1, 1)
+
+        self.level_linewise_button = QtWidgets.QPushButton(self.centralwidget)
+        self.level_linewise_button.setObjectName("Level_linewise_button")
+        self.level_linewise_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.level_linewise_button.setMaximumSize(QtCore.QSize(button_size, button_size))
+        self.level_linewise_button.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/level_linewise.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.level_linewise_button.setIcon(icon)
+        self.level_linewise_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout2.addWidget(self.level_linewise_button, 0, 3, 1, 1)
+
+        self.filter_button = QtWidgets.QPushButton(self.centralwidget)
+        self.filter_button.setObjectName("filter_button")
+        self.filter_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.filter_button.setMaximumSize(QtCore.QSize(button_size, button_size))
+        self.filter_button.setText("")
+        self.filter_button.setCheckable(True)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/filter.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.filter_button.setIcon(icon)
+        self.filter_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout2.addWidget(self.filter_button, 0, 4, 1, 1)
+
+        self.fft_button = QtWidgets.QPushButton(self.centralwidget)
+        self.fft_button.setObjectName("fft_button")
+        self.fft_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.fft_button.setMaximumSize(QtCore.QSize(button_size, button_size))
+        self.fft_button.setText("")
+        self.fft_button.setCheckable(True)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/fft.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.fft_button.setIcon(icon)
+        self.fft_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout2.addWidget(self.fft_button, 0, 5, 1, 1)
+
+        self.rotate_clockwise_button = QtWidgets.QPushButton(self.centralwidget)
+        self.rotate_clockwise_button.setObjectName("rotate_clockwise_button")
+        self.rotate_clockwise_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.rotate_clockwise_button.setMaximumSize(QtCore.QSize(button_size, button_size))
+        self.rotate_clockwise_button.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/rotate_clockwise.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.rotate_clockwise_button.setIcon(icon)
+        self.rotate_clockwise_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout2.addWidget(self.rotate_clockwise_button, 1, 0, 1, 1)
+
+        self.rotate_anticlockwise_button = QtWidgets.QPushButton(self.centralwidget)
+        self.rotate_anticlockwise_button.setObjectName("rotate_anticlockwise_button")
+        self.rotate_anticlockwise_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.rotate_anticlockwise_button.setMaximumSize(QtCore.QSize(button_size, button_size))
+        self.rotate_anticlockwise_button.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/rotate_anticlockwise.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.rotate_anticlockwise_button.setIcon(icon)
+        self.rotate_anticlockwise_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout2.addWidget(self.rotate_anticlockwise_button, 1, 1, 1, 1)
+
+        self.vertical_mirror_button = QtWidgets.QPushButton(self.centralwidget)
+        self.vertical_mirror_button.setObjectName("vertical_mirror_button")
+        self.vertical_mirror_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.vertical_mirror_button.setMaximumSize(QtCore.QSize(button_size, button_size))
+        self.vertical_mirror_button.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/vertical_mirror.png")), QtGui.QIcon.Normal,
+                       QtGui.QIcon.Off)
+        self.vertical_mirror_button.setIcon(icon)
+        self.vertical_mirror_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout2.addWidget(self.vertical_mirror_button, 1, 2, 1, 1)
+
+        self.horizontal_mirror_button = QtWidgets.QPushButton(self.centralwidget)
+        self.horizontal_mirror_button.setObjectName("horizontal_mirror_button")
+        self.horizontal_mirror_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.horizontal_mirror_button.setMaximumSize(QtCore.QSize(button_size, button_size))
+        self.horizontal_mirror_button.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/horizontal_mirror.png")), QtGui.QIcon.Normal,
+                       QtGui.QIcon.Off)
+        self.horizontal_mirror_button.setIcon(icon)
+        self.horizontal_mirror_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout2.addWidget(self.horizontal_mirror_button, 1, 3, 1, 1)
+
+        self.scale_button = QtWidgets.QPushButton(self.centralwidget)
+        self.scale_button.setObjectName("Scale_button")
+        self.scale_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.scale_button.setMaximumSize(QtCore.QSize(button_size, button_size))
+        self.scale_button.setText("")
+        self.scale_button.setCheckable(True)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/scale.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.scale_button.setIcon(icon)
+        self.scale_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout2.addWidget(self.scale_button, 1, 4, 1, 1)
 
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -267,7 +355,14 @@ class MainWindow(QMainWindow):
         self.level_linewise_button.clicked.connect(self.levelEdit)
         self.level_plane_button.clicked.connect(self.level_planeEdit)
         self.set_zero_button.clicked.connect(self.setZeroLevelEdit)
-        self.profile_button.toggled.connect(self.profileEdit)
+        self.profile_button.clicked.connect(self.profileEdit)
+        self.scale_button.clicked.connect(self.scale)
+        self.filter_button.clicked.connect(self.filterEdit)
+        self.fft_button.clicked.connect(self.fft_edit)
+        self.rotate_anticlockwise_button.clicked.connect(self.rotate_anticlockwise)
+        self.rotate_clockwise_button.clicked.connect(self.rotate_clockwise)
+        self.vertical_mirror_button.clicked.connect(self.mirror_lr)
+        self.horizontal_mirror_button.clicked.connect(self.mirror_ud)
 
     def _update_push_buttons(self):
         if self.active_result_window == None:
@@ -277,6 +372,13 @@ class MainWindow(QMainWindow):
             self.redo_button.setDisabled(True)
             self.set_zero_button.setDisabled(True)
             self.profile_button.setDisabled(True)
+            self.scale_button.setDisabled(True)
+            self.rotate_clockwise_button.setDisabled(True)
+            self.rotate_anticlockwise_button.setDisabled(True)
+            self.vertical_mirror_button.setDisabled(True)
+            self.horizontal_mirror_button.setDisabled(True)
+            self.filter_button.setDisabled(True)
+            self.fft_button.setDisabled(True)
 
         else:
             active_window = self.results_windows[self.active_result_window]
@@ -285,11 +387,27 @@ class MainWindow(QMainWindow):
                 self.level_plane_button.setDisabled(False)
                 self.set_zero_button.setDisabled(False)
                 self.profile_button.setDisabled(False)
+                self.scale_button.setDisabled(False)
+                self.rotate_clockwise_button.setDisabled(False)
+                self.rotate_anticlockwise_button.setDisabled(False)
+                self.vertical_mirror_button.setDisabled(False)
+                self.horizontal_mirror_button.setDisabled(False)
+                self.filter_button.setDisabled(False)
+                self.fft_button.setDisabled(False)
+
             if isinstance(active_window, SpectroscopyWindow):
                 self.level_linewise_button.setDisabled(True)
                 self.level_plane_button.setDisabled(True)
                 self.set_zero_button.setDisabled(True)
                 self.profile_button.setDisabled(True)
+                self.scale_button.setDisabled(True)
+                self.rotate_clockwise_button.setDisabled(True)
+                self.rotate_anticlockwise_button.setDisabled(True)
+                self.vertical_mirror_button.setDisabled(True)
+                self.horizontal_mirror_button.setDisabled(True)
+                self.filter_button.setDisabled(True)
+                self.fft_button.setDisabled(True)
+
             if active_window.winState.undoPossible():
                 self.undo_button.setDisabled(False)
             else:
@@ -550,8 +668,13 @@ class MainWindow(QMainWindow):
         self.update_windows()
 
     def filterEdit(self):
-        self.filterWin.show()
-        self.update_windows()
+        if not self.filter_win_active:
+            self.filterWin.show()
+            self.update_windows()
+            self.filter_win_active = True
+        else:
+            self.filterWin.hide()
+            self.filter_win_active = False
 
     def profileEdit(self):
         if not self.profile_win_active:

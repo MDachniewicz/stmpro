@@ -154,6 +154,7 @@ class ProfileWindow(QDialog):
         if event.type() == QtCore.QEvent.Hide:
             self.parent.change_mode(None)
             self.parent.profile_win_active = False
+            self.parent.profile_button.setChecked(False)
         return False
 
 
