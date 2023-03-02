@@ -23,7 +23,7 @@ class Topography(STMData):
             self.__initXYZ(data, unit)
 
         self.X, self.xunit = self.auto_set_unit(self.X, self.xunit)
-        self.Y = self.set_unit(self.Y, unit, self.xunit)
+        self.Y = self.set_unit(self.Y, self.yunit, self.xunit)
         self.yunit = self.xunit
         self.Z, self.unit = self.auto_set_unit(self.Z, self.unit)
 
@@ -72,6 +72,7 @@ class Topography(STMData):
         self.Z = data[2]
         self.unit = unit
         self.xunit = unit
+        self.yunit = unit
         self.filename = data[3]
 
     def plotData(self, ax=None):
@@ -83,11 +84,17 @@ class Topography(STMData):
             plt.colorbar(im, cax=cax)
 
     def XYZ(self):
-        return np.hstack([self.X.reshape(-1, 1), self.Y.reshape(-1, 1), self.Z.reshape(-1, 1)])
+        x, _ = self.unit_to_si(self.X, self.xunit)
+        y, _ = self.unit_to_si(self.Y, self.yunit)
+        z, _ = self.unit_to_si(self.Z, self.unit)
+
+        return np.hstack([x.reshape(-1, 1), y.reshape(-1, 1), z.reshape(-1, 1)])
 
     def saveXYZ(self, filename=None):
         if filename == None:
-            filename = self.filename + '.XYZ'
+            filename = self.filename + '.xyz'
+        if filename[-3:] != 'xyz':
+            filename = filename + '.xyz'
         XYZ = self.XYZ()
         np.savetxt(filename, XYZ)
 
