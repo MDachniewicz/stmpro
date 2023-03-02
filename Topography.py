@@ -15,15 +15,17 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 class Topography(STMData):
 
-    def __init__(self, filetype, data, ax=0):
+    def __init__(self, filetype, data, unit='m', ax=0):
         if filetype == 'mtrx':
             self.__initMtrx(data, ax)
-            self.X, self.xunit = self.auto_set_unit(self.X, self.xunit)
-            self.Y = self.set_unit(self.Y, 'm', self.xunit)
-            self.yunit = self.xunit
-            self.Z, self.unit = self.auto_set_unit(self.Z, self.unit)
+
         if filetype == 'xyz':
-            self.__initXYZ(data)
+            self.__initXYZ(data, unit)
+
+        self.X, self.xunit = self.auto_set_unit(self.X, self.xunit)
+        self.Y = self.set_unit(self.Y, unit, self.xunit)
+        self.yunit = self.xunit
+        self.Z, self.unit = self.auto_set_unit(self.Z, self.unit)
 
     def __initMtrx(self, mtrx, ax):
         self.filetype = mtrx.filetype
@@ -64,10 +66,12 @@ class Topography(STMData):
         elif ax == 3:
             self.Z = mtrx.imageBackDown
 
-    def __initXYZ(self, data):
+    def __initXYZ(self, data, unit):
         self.X = data[0]
         self.Y = data[1]
         self.Z = data[2]
+        self.unit = unit
+        self.xunit = unit
         self.filename = data[3]
 
     def plotData(self, ax=None):

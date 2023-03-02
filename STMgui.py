@@ -18,6 +18,7 @@ from ProfileWindow import ProfileWindow
 from HistogramWindow import HistogramWindow
 from FourierWindow import FourierWindow
 from ScaleWindow import ScaleWindow
+from ExportWindow import ExportWindow
 
 def resources_path(path):
     try:
@@ -539,18 +540,17 @@ class MainWindow(QMainWindow):
                                                    "No header file (\"_0001.mtrx\") found.",
                                                    QtWidgets.QMessageBox.Ok)
 
-    # Functions
     def openXYZFile(self):
         options = QFileDialog.Options()
         files, _ = QFileDialog.getOpenFileNames(self, "Open Files", "", ".xyz Files (*.xyz)",
                                                 options=options)
-        ret, points, lines = self.getXYZsize()
+        ret, points, lines, unit = self.getXYZsize()
         if ret == False:
             return
         shape = [points, lines]
         for file in files:
             try:
-                data = Files.NewFileXYZ(file, shape)
+                data = Files.NewFileXYZ(file, shape, unit)
                 self.openResultWindow(data, 'Z')
             except ValueError:
                 QtWidgets.QMessageBox.question(self,
@@ -576,16 +576,25 @@ class MainWindow(QMainWindow):
         dialog.setLabelText("Insert number of points and lines.")
         dialog.show()
         dialog.findChild(QtWidgets.QLineEdit).hide()
-        inputs = []
-        input_points = QtWidgets.QLineEdit('0')
-        inputs.append(input_points)
-        input_lines = QtWidgets.QLineEdit('0')
-        inputs.append(input_lines)
+        #inputs = []
+        input_points = QtWidgets.QSpinBox()
+        input_points.setRange(0, 1024)
+        input_points.setValue(0)
+        input_points.setSingleStep(1)
+        #inputs.append(input_points)
+        input_lines = QtWidgets.QSpinBox()
+        input_lines.setRange(0, 1024)
+        input_lines.setValue(0)
+        input_lines.setSingleStep(1)
+        input_unit = QtWidgets.QComboBox()
+        input_unit.addItems(["m", "mm", "μm", "nm", "Å", "pm"])
+        #inputs.append(input_lines)
         dialog.layout().insertWidget(0, input_points)
         dialog.layout().insertWidget(1, input_lines)
+        dialog.layout().insertWidget(2, input_unit)
 
         ret = dialog.exec_() == QtWidgets.QDialog.Accepted
-        return ret, int(input_points.text()), int(input_lines.text())
+        return ret, input_points.value(), input_lines.value(), input_unit.currentText()
 
     def exitFile(self):
         self.profileWin.close()

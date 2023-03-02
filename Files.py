@@ -21,7 +21,7 @@ def NewFile(file):
     return result, filetype
 
 
-def NewFileXYZ(filename, shape):
+def NewFileXYZ(filename, shape, unit):
     X = []
     Y = []
     Z = []
@@ -43,6 +43,6 @@ def NewFileXYZ(filename, shape):
     Z = np.reshape(Z, shape)
 
     data = [X, Y, Z, filename]
-    result = Topography.Topography(filetype='xyz', data=data)
+    result = Topography.Topography(filetype='xyz', data=data, unit=unit)
 
     return result
