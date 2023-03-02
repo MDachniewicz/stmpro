@@ -492,10 +492,11 @@ class MainWindow(QMainWindow):
 
         else:
             active_window = self.results_windows[self.active_result_window]
-            if isinstance(active_window, TopographyWindow):
-                self.filterWin.enable()
+            if isinstance(active_window, ResultWindow):
                 self.scale_win.enable()
                 self.scale_win.update()
+            if isinstance(active_window, TopographyWindow):
+                self.filterWin.enable()
                 self.profileWin.enable()
                 if self.profile_win_active:
                     self.profileWin.update_plot()

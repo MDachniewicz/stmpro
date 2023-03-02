@@ -116,8 +116,10 @@ class ScaleWindow(QMainWindow):
             self.active_window = self.parent.results_windows[self.parent.active_result_window]
             if isinstance(self.active_window, ResultWindow.TopographyWindow):
                 self._update_xrange()
-                self._update_new_xrange()
                 self._update_yrange()
+                self._update_zrange()
+            if isinstance(self.active_window, ResultWindow.SpectroscopyWindow):
+                self._update_xrange()
                 self._update_zrange()
 
     def x_factor_changed(self, value):

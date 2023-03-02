@@ -36,13 +36,13 @@ class Matrix:
         self.findHeader(file)
         self.openHeader()
         self.set_file_type()
-        if self.filetype == 'Z':
+        if self.datatype == 'Z':
             self.openTopoData()
-        if self.filetype == 'I':
+        if self.datatype == 'I':
             self.openTopoData()
-        if self.filetype == 'I(V)-curve':
+        if self.datatype == 'I(V)-curve':
             self.openCurveData()
-        if self.filetype == 'I(V)-map':
+        if self.datatype == 'I(V)-map':
             self.openMapData()
 
     def openMapData(self):
@@ -84,12 +84,12 @@ class Matrix:
         ypoints = int(np.ceil(lines / subgridy))
         vpoints = self.parameter['Spectroscopy.Device_1_Points'][0]
         rampReversal = self.parameter['Spectroscopy.Enable_Device_1_Ramp_Reversal'][0]
-        if self.filetype == 'I(V)-map' and not rampReversal:
+        if self.datatype == 'I(V)-map' and not rampReversal:
             expectedNumOfPoints = xpoints * ypoints * vpoints
             if self.data.size < expectedNumOfPoints:
                 self.fill_data(expectedNumOfPoints)
             self.currentForw = self.data.reshape(xpoints, ypoints, vpoints)
-        if self.filetype == 'I(V)-map' and rampReversal:
+        if self.datatype == 'I(V)-map' and rampReversal:
             expectedNumOfPoints = xpoints * ypoints * vpoints * 2
             if self.data.size < expectedNumOfPoints:
                 self.fill_data(expectedNumOfPoints)
@@ -140,12 +140,12 @@ class Matrix:
         vend = self.parameter['Spectroscopy.Device_1_End'][0]
         vpoints = self.parameter['Spectroscopy.Device_1_Points'][0]
 
-        if self.filetype == 'I(V)-curve' or self.filetype == 'I(V)-map':
-            if self.filetype == 'I(V)-curve' and not rampReversal:
+        if self.datatype == 'I(V)-curve' or self.datatype == 'I(V)-map':
+            if self.datatype == 'I(V)-curve' and not rampReversal:
                 if self.data.size < vpoints:
                     self.fill_data(vpoints)
                 self.currentForw = self.data
-            if self.filetype == 'I(V)-curve' and rampReversal:
+            if self.datatype == 'I(V)-curve' and rampReversal:
                 if self.data.size < 2 * vpoints:
                     self.fill_data(2 * vpoints)
                 self.currentForw = self.data[:vpoints]
@@ -223,12 +223,16 @@ class Matrix:
         filename, file_extension = os.path.splitext(self.file)
         if file_extension == '.Z_mtrx':
             self.filetype = 'Z'
+            self.datatype = 'Z'
         if file_extension == '.I_mtrx':
             self.filetype = 'I'
+            self.datatype = 'I'
         if file_extension == '.I(V)_mtrx' and self.parameter['XYScanner.Enable_Subgrid'][0] == False:
-            self.filetype = 'I(V)-curve'
+            self.filetype = 'I(V)'
+            self.datatype = 'I(V)-curve'
         if file_extension == '.I(V)_mtrx' and self.parameter['XYScanner.Enable_Subgrid'][0] == True:
-            self.filetype = 'I(V)-map'
+            self.filetype = 'I(V)'
+            self.datatype = 'I(V)-map'
 
     # Calculate physical values
     def scale_data(self):
@@ -238,7 +242,7 @@ class Matrix:
         key = 'XFER' + key[4::]
 
         if self.parameter["XFER"][key][0] == 'TFF_Linear1D':
-            self.data = (self.data - self.parameter["XFER"][key][2]['Factor']) / self.parameter["XFER"][key][2][
+            self.data = (self.data - self.parameter["XFER"][key][2]['Offset']) / self.parameter["XFER"][key][2][
                 'Factor']
         else:
             self.data = (self.parameter["XFER"][key][2]['Raw_1'][0] - self.parameter["XFER"][key][2]['PreOffset'][0]) * \
@@ -563,9 +567,9 @@ class Matrix:
             self.mtrxRef.show(self.xloc, self.yloc)
 
     def show(self, xloc=None, yloc=None):
-        if self.filetype == 'Z' or self.filetype == 'I':
+        if self.datatype == 'Z' or self.datatype == 'I':
             self._plotTopo(xloc, yloc)
-        if self.filetype == 'I(V)-curve' or self.filetype == 'I(Z)-curve':
+        if self.datatype == 'I(V)-curve' or self.datatype == 'I(Z)-curve':
             self._plotCurve()
             self._plotLoc()
 

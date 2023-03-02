@@ -28,7 +28,7 @@ class Topography(STMData):
         self.Z, self.unit = self.auto_set_unit(self.Z, self.unit)
 
     def __initMtrx(self, mtrx, ax):
-        self.filetype = mtrx.filetype
+        self.filetype = mtrx.datatype
         self.parameters = mtrx.parameter
         self.X = mtrx.x
         self.Y = mtrx.y

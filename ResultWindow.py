@@ -243,7 +243,8 @@ class TopographyWindow(ResultWindow):
 
 class SpectroscopyWindow(ResultWindow):
     def __init__(self, data=None, parent=None, width=4.5, height=4, dpi=100, name=None):
-        super().__init__(data, parent, width, height, dpi, name)
+        super().__init__(None, parent, width, height, dpi, name)
+        self.data = data
         self.canvas = FigureCanvas(self)
         self.setCentralWidget(self.canvas)
         self.show()
@@ -251,8 +252,12 @@ class SpectroscopyWindow(ResultWindow):
 
     def draw(self):
         self.canvas.axes.cla()
-        self.canvas.axes.plot(self.data.V, self.data.currentForw)
+        self.canvas.axes.plot(self.data.V, self.data.current_forward)
+        self.canvas.axes.set_xlabel(self.data.xunit)
+        self.canvas.axes.set_ylabel(self.data.unit)
         self.canvas.draw()
+
+
 
 
 class ProfileResultWindow(ResultWindow):
