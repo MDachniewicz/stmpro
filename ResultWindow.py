@@ -150,7 +150,7 @@ class TopographyWindow(ResultWindow):
 
         # Setting window name
         if name is None:
-            self.setWindowTitle(data.filename)
+            self.setWindowTitle(data.name)
         self.show()
         self.draw()
 

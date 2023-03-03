@@ -35,7 +35,7 @@ class Topography(STMData):
         #    if self.available_axes[enum]:
         #        self.z_data[enum], self.unit = self.auto_set_unit(z, self.unit)
 
-        self.Z, self.unit = self.auto_set_unit(self.Z, self.unit)
+        self.Z, self.unit = self.update_unit(self.Z, self.unit)
 
     def __initMtrx(self, mtrx, ax):
         self.filetype = mtrx.datatype
@@ -89,9 +89,11 @@ class Topography(STMData):
                     self.active_ax = enum
                     return
         else:
-            self.Z = self.z_data[ax]
+            self.Z, si_unit  = self.unit_to_si(self.Z, self.unit)
+            self.Z, self.z_data[self.active_ax] = self.z_data[ax], self.Z
             self.active_ax = ax
-            #self.Z, self.unit = self.update_unit(self.Z, self.unit)
+            self.Z, self.unit = self.update_unit(self.Z, si_unit)
+            #self.Z, self.unit = self.auto_set_unit(self.Z, self.unit)
 
     def plotData(self, ax=None):
         if ax:
