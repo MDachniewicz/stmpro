@@ -9,7 +9,7 @@ import os, sys
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import (QMainWindow, QMenu,
-                             QAction, QFileDialog)
+                             QAction, QFileDialog, QActionGroup)
 
 import Files
 from ResultWindow import ResultWindow, SpectroscopyWindow, TopographyWindow
@@ -292,6 +292,13 @@ class MainWindow(QMainWindow):
         editMenu.addAction(self.profileAction)
         editMenu.addAction(self.histAction)
         editMenu.addAction(self.fft_action)
+        #Topography Menu
+        topography_menu = menuBar.addMenu("&Topography")
+        select_ax_menu = topography_menu.addMenu("&Select image")
+        select_ax_menu.addAction(self.change_image1_action)
+        select_ax_menu.addAction(self.change_image2_action)
+        select_ax_menu.addAction(self.change_image3_action)
+        select_ax_menu.addAction(self.change_image4_action)
         # Help Menu
         helpMenu = menuBar.addMenu("&Help")
         helpMenu.addAction(self.aboutAction)
@@ -320,6 +327,21 @@ class MainWindow(QMainWindow):
         self.profileAction = QAction("Profile...", self)
         self.histAction = QAction("Histogram...", self)
         self.fft_action = QAction("FFT...", self)
+        # Topography
+        # Scanning direction selection
+        self.change_image_group = QActionGroup(self)
+        self.change_image1_action = QAction("&Forward-Up", self)
+        self.change_image2_action = QAction("&Backward-Up", self)
+        self.change_image3_action = QAction("&Forward-Down", self)
+        self.change_image4_action = QAction("&Backward-Down", self)
+        self.change_image1_action.setCheckable(True)
+        self.change_image2_action.setCheckable(True)
+        self.change_image3_action.setCheckable(True)
+        self.change_image4_action.setCheckable(True)
+        self.change_image_group.addAction(self.change_image1_action)
+        self.change_image_group.addAction(self.change_image2_action)
+        self.change_image_group.addAction(self.change_image3_action)
+        self.change_image_group.addAction(self.change_image4_action)
         # Help
         self.helpContentAction = QAction("&Help Content", self)
         self.aboutAction = QAction("&About", self)
@@ -345,6 +367,11 @@ class MainWindow(QMainWindow):
         self.profileAction.triggered.connect(self.profileEdit)
         self.histAction.triggered.connect(self.hist_edit)
         self.fft_action.triggered.connect(self.fft_edit)
+
+        self.change_image1_action.triggered.connect(self.change_image)
+        self.change_image2_action.triggered.connect(self.change_image)
+        self.change_image3_action.triggered.connect(self.change_image)
+        self.change_image4_action.triggered.connect(self.change_image)
 
         self.aboutAction.triggered.connect(self.aboutHelp)
 
@@ -419,6 +446,8 @@ class MainWindow(QMainWindow):
                 self.redo_button.setDisabled(True)
 
     def _update_menu(self):
+        for button in self.change_image_group.actions():
+            button.setChecked(False)
         if self.active_result_window == None:
             self.rotate_clockwise_action.setDisabled(True)
             self.rotate_anticlockwise_action.setDisabled(True)
@@ -436,6 +465,10 @@ class MainWindow(QMainWindow):
             self.save_png_action.setDisabled(True)
             self.undoAction.setDisabled(True)
             self.redoAction.setDisabled(True)
+            self.change_image1_action.setDisabled(True)
+            self.change_image2_action.setDisabled(True)
+            self.change_image3_action.setDisabled(True)
+            self.change_image4_action.setDisabled(True)
 
         else:
             active_window = self.results_windows[self.active_result_window]
@@ -455,6 +488,10 @@ class MainWindow(QMainWindow):
                 self.histAction.setDisabled(False)
                 self.fft_action.setDisabled(False)
                 self.saveXYZAction.setDisabled(False)
+                self.change_image_group.actions()[active_window.data.active_ax].setChecked(True)
+                for button, av in zip(self.change_image_group.actions(), active_window.data.available_axes):
+                    if av:
+                        button.setDisabled(False)
             if isinstance(active_window, SpectroscopyWindow):
                 self.scale_action.setDisabled(True)
                 self.rotate_clockwise_action.setDisabled(True)
@@ -469,6 +506,10 @@ class MainWindow(QMainWindow):
                 self.histAction.setDisabled(True)
                 self.fft_action.setDisabled(True)
                 self.saveXYZAction.setDisabled(True)
+                self.change_image1_action.setDisabled(True)
+                self.change_image2_action.setDisabled(True)
+                self.change_image3_action.setDisabled(True)
+                self.change_image4_action.setDisabled(True)
             if active_window.winState.undoPossible():
                 self.undoAction.setDisabled(False)
             else:
@@ -707,10 +748,17 @@ class MainWindow(QMainWindow):
         self.fft_win_active = True
         self.update_windows()
 
+    def change_image(self):
+        result = self.results_windows[self.active_result_window]
+        for enum, button in enumerate(self.change_image_group.actions()):
+            if button.isChecked():
+                ax=enum
+        result.change_image(ax)
+
     def aboutHelp(self):
         QtWidgets.QMessageBox.question(self,
                                        "About",
-                                       "STMpro 0.0.6 pre-alpha",
+                                       "STMpro 0.0.7 pre-alpha",
                                        QtWidgets.QMessageBox.Ok)
 
     def change_mode(self, mode):

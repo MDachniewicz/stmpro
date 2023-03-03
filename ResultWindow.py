@@ -146,10 +146,17 @@ class TopographyWindow(ResultWindow):
         self.first_point = None
         self.profile_lines = []
 
+        self.active_ax = 0
+
         # Setting window name
         if name is None:
             self.setWindowTitle(data.filename)
         self.show()
+        self.draw()
+
+    def change_image(self, ax):
+        self.data.change_ax(ax)
+        self.active_ax=ax
         self.draw()
 
     def draw(self):
