@@ -9,6 +9,7 @@ import itertools
 from STMData import STMData
 import Filters
 import Curves
+import Images
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -205,6 +206,13 @@ class Topography(STMData):
         z = self.Z.reshape(-1, 1)
         hist, bin_edges = np.histogram(z, n_bins)
         return hist, bin_edges
+
+    #FFT
+    def fft(self):
+        return Images.fft_image(self.Z)
+
+    def ifft(self, fft_image):
+        return Images.ifft_image(fft_image)
 
 
 class ProfileData(STMData):

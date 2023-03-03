@@ -13,7 +13,7 @@ class FourierWindow(QDialog):
         self._setup()
         self._createActions()
         self._connectActions()
-
+        self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.installEventFilter(self)
         self.profile_width = 3
 
@@ -28,15 +28,12 @@ class FourierWindow(QDialog):
         self.plotting_area = QtWidgets.QWidget(self)
         self.plotting_area.setGeometry(QtCore.QRect(0, 0, 750, 320))
 
-        #self.plotting_area2 = QtWidgets.QWidget(self)
-        #self.plotting_area2.setGeometry(QtCore.QRect(400, 0, 350, 320))
-
         self.plotting_area_layout = QtWidgets.QHBoxLayout(self.plotting_area)
 
         self.canvas_img = FigureCanvas(self, 5, 5, 100)
         self.canvas_fft = FigureCanvas(self, 5, 5, 100)
-        self.plotting_area_layout.addWidget(self.canvas_img)
         self.plotting_area_layout.addWidget(self.canvas_fft)
+        self.plotting_area_layout.addWidget(self.canvas_img)
         self.update_img()
 
     def update_img(self):
@@ -44,12 +41,14 @@ class FourierWindow(QDialog):
         if self.parent.active_result_window != None:
             active_window = self.parent.results_windows[self.parent.active_result_window]
             if isinstance(active_window, TopographyWindow):
-                self.canvas_img.axes.pcolormesh(active_window.data.X, active_window.data.Y, active_window.data.Z, cmap='afmhot')
+                fft_image=active_window.data.fft()
+                ifft_image=active_window.data.ifft(fft_image)
+                self.canvas_img.axes.pcolormesh(active_window.data.X, active_window.data.Y, ifft_image, cmap='afmhot')
                 self.canvas_img.draw()
                 self.canvas_img.axes.set_aspect('equal')
-                self.canvas_fft.axes.pcolormesh(fft_image(active_window.data.Z))
+                self.canvas_fft.axes.pcolormesh(abs(fft_image))
                 self.canvas_fft.draw()
-                self.canvas_img.axes.set_aspect('equal')
+                self.canvas_fft.axes.set_aspect('equal')
 
     def clear_plot(self):
         self.canvas_img.axes.cla()
