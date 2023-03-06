@@ -45,6 +45,7 @@ class Topography(STMData):
         self.filename = mtrx.file
         self.xunit = 'm'
         self.yunit = 'm'
+        self.active_ax = 0
         self.z_data.append(mtrx.imageForwUp)
         self.z_data.append(mtrx.imageBackUp)
         self.z_data.append(mtrx.imageForwDown)

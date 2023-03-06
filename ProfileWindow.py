@@ -38,7 +38,8 @@ class ProfileWindow(QDialog):
         self.canvas.axes.cla()
         if self.parent.active_result_window != None:
             active_window = self.parent.results_windows[self.parent.active_result_window]
-            for profile in active_window.profile_lines:
+            active_ax = active_window.active_ax
+            for profile in active_window.profile_lines[active_ax]:
                 x1 = profile.first_point.x_index
                 x2 = profile.second_point.x_index
                 y1 = profile.first_point.y_index
@@ -112,20 +113,21 @@ class ProfileWindow(QDialog):
     def apply(self):
         active_window = self.parent.results_windows[self.parent.active_result_window]
         unit, xunit, _ = active_window.data.get_units()
+        active_ax = active_window.active_ax
         if self.separate_profiles:
-            for enum, profile in enumerate(active_window.profile_lines):
+            for enum, profile in enumerate(active_window.profile_lines[active_ax]):
                 x1 = profile.first_point.x_index
                 x2 = profile.second_point.x_index
                 y1 = profile.first_point.y_index
                 y2 = profile.second_point.y_index
                 distance, profile = active_window.data.get_profile((x1, y1), (x2, y2), self.profile_width)
-                name='Profile' + str(enum)
-                profile=[ProfileData(distance, profile, unit=unit, xunit=xunit, name=name)]
+                name = 'Profile' + str(enum)
+                profile = [ProfileData(distance, profile, unit=unit, xunit=xunit, name=name)]
                 ProfileResultWindow(profile=profile, parent=self.parent, name=name)
         else:
             profiles = []
 
-            for enum, profile in enumerate(active_window.profile_lines):
+            for enum, profile in enumerate(active_window.profile_lines[active_ax]):
                 x1 = profile.first_point.x_index
                 x2 = profile.second_point.x_index
                 y1 = profile.first_point.y_index
