@@ -52,6 +52,7 @@ class MainWindow(QMainWindow):
         self.hist_win = HistogramWindow(self)
         self.fft_win = FourierWindow(self)
         self.scale_win = ScaleWindow(self)
+        self.export_win = ExportWindow(self)
         # First update of menus, buttons and windows
         self._update_menu()
         self._update_push_buttons()
@@ -270,6 +271,7 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(self.openXYZAction)
         fileMenu.addAction(self.saveXYZAction)
         fileMenu.addAction(self.save_png_action)
+        fileMenu.addAction(self.export_action)
         fileMenu.addAction(self.exitAction)
         # Edit Menu
         editMenu = menuBar.addMenu("&Edit")
@@ -309,6 +311,7 @@ class MainWindow(QMainWindow):
         self.openXYZAction = QAction("&Open XYZ...", self)
         self.saveXYZAction = QAction("&Save XYZ", self)
         self.save_png_action = QAction("&Save PNG", self)
+        self.export_action = QAction("&Export", self)
         self.exitAction = QAction("&Exit", self)
         # Edit
         self.undoAction = QAction("&Undo", self)
@@ -351,6 +354,7 @@ class MainWindow(QMainWindow):
         self.openXYZAction.triggered.connect(self.openXYZFile)
         self.saveXYZAction.triggered.connect(self.saveXYZFile)
         self.save_png_action.triggered.connect(self.save_png)
+        self.export_action.triggered.connect(self.export)
         self.exitAction.triggered.connect(self.exitFile)
 
         self.redoAction.triggered.connect(self.redoEdit)
@@ -637,6 +641,14 @@ class MainWindow(QMainWindow):
 
         ret = dialog.exec_() == QtWidgets.QDialog.Accepted
         return ret, input_points.value(), input_lines.value(), input_unit.currentText()
+
+    def export(self):
+        if not self.profile_win_active:
+            self.export_win.show()
+            self.export_win.update()
+        else:
+            self.export_win.hide()
+
 
     def exitFile(self):
         self.profileWin.close()
