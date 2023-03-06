@@ -18,7 +18,6 @@ from ProfileWindow import ProfileWindow
 from HistogramWindow import HistogramWindow
 from FourierWindow import FourierWindow
 from ScaleWindow import ScaleWindow
-from ExportWindow import ExportWindow
 
 def resources_path(path):
     try:
