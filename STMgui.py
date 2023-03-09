@@ -311,7 +311,7 @@ class MainWindow(QMainWindow):
         self.openXYZAction = QAction("&Open XYZ...", self)
         self.saveXYZAction = QAction("&Save XYZ", self)
         self.save_png_action = QAction("&Save PNG", self)
-        self.export_action = QAction("&Export", self)
+        self.export_action = QAction("&Export...", self)
         self.exitAction = QAction("&Exit", self)
         # Edit
         self.undoAction = QAction("&Undo", self)

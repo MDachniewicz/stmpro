@@ -5,9 +5,12 @@ import ResultWindow
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 
 class ExportWindow(QMainWindow):
     FILETYPES_TOPO = ['png', 'jpg']
+
     def __init__(self, parent):
         super(ExportWindow, self).__init__()
         self.parent = parent
@@ -22,6 +25,7 @@ class ExportWindow(QMainWindow):
         self.rulers = False
         self.colormap = 'afmhot'
         self.scale_bar = True
+        self.dpi = 300
         self.fontsize = 10
 
     def _setup(self):
@@ -46,9 +50,6 @@ class ExportWindow(QMainWindow):
         self.canvas.setMaximumSize(400, 400)
         self.layout_preview.addWidget(self.canvas)
 
-
-
-
     def _create_topography_filetypes(self):
         self.combobox_filetypes = QComboBox(self)
         self.combobox_filetypes.addItems(self.FILETYPES_TOPO)
@@ -57,13 +58,57 @@ class ExportWindow(QMainWindow):
 
     def _create_image_settings(self):
         self.setting_colorbar = QCheckBox('Colorbar', self)
+        self.setting_colorbar.setChecked(self.colorbar)
+        self.setting_colorbar.toggled.connect(self._colorbar_changed)
         self.layout_settings.addWidget(self.setting_colorbar)
+
+        self.setting_scalebar_layout = QtWidgets.QHBoxLayout(self.central_widget)
+        self.setting_scalebar = QCheckBox('Scalebar', self)
+        self.setting_scalebar.setChecked(self.scale_bar)
+        self.setting_scalebar.toggled.connect(self._scalebar_changed)
+        self.setting_scalebar_layout.addWidget(self.setting_scalebar)
+        self.setting_ruler = QCheckBox('Axes', self)
+        self.setting_ruler.setChecked(self.rulers)
+        self.setting_ruler.toggled.connect(self._ruler_changed)
+        self.setting_scalebar_layout.addWidget(self.setting_ruler)
+        self.layout_settings.addLayout(self.setting_scalebar_layout)
+
+        self.setting_fontsize = QtWidgets.QSpinBox(self.central_widget)
+        self.setting_fontsize.setRange(1, 60)
+        self.setting_fontsize.setValue(self.fontsize)
+        self.setting_fontsize.valueChanged.connect(self._fontsize_changed)
+        self.layout_settings.addWidget(self.setting_fontsize)
+
+        self.setting_dpi_layout = QtWidgets.QHBoxLayout(self.central_widget)
+        self.label_dpi = QtWidgets.QLabel('DPI: ', self.central_widget)
+        self.setting_dpi = QtWidgets.QSpinBox(self.central_widget)
+        self.setting_dpi.setRange(60, 1200)
+        self.setting_dpi.setValue(self.dpi)
+        self.setting_dpi.valueChanged.connect(self._dpi_changed)
+        self.setting_dpi_layout.addWidget(self.label_dpi)
+        self.setting_dpi_layout.addWidget(self.setting_dpi)
+        self.layout_settings.addLayout(self.setting_dpi_layout)
 
     def _filetype_text_changed(self, i):
         self.filetype = self.combobox_filetypes.currentText()
 
     def _colorbar_changed(self):
         self.colorbar = self.setting_colorbar.isChecked()
+        self.draw()
+
+    def _scalebar_changed(self):
+        self.scale_bar = self.setting_scalebar.isChecked()
+        self.draw()
+
+    def _ruler_changed(self):
+        self.rulers = self.setting_ruler.isChecked()
+        self.draw()
+
+    def _dpi_changed(self, value):
+        self.dpi = value
+
+    def _fontsize_changed(self, value):
+        self.fontsize = value
         self.draw()
 
     def _createActions(self):
@@ -95,20 +140,32 @@ class ExportWindow(QMainWindow):
             self.draw()
 
     def draw(self):
-        self.canvas.axes.cla()
-        im = self.canvas.axes.pcolormesh(self.active_window.data.X, self.active_window.data.Y, self.active_window.data.Z, cmap=self.colormap)
+        self.canvas.fig.clf()
+        self.canvas.axes = self.canvas.fig.add_subplot(111)
+        im = self.canvas.axes.pcolormesh(self.active_window.data.X, self.active_window.data.Y,
+                                         self.active_window.data.Z, cmap=self.colormap)
+        self.canvas.axes.set_aspect('equal')
+        #self.canvas.axes.get_xaxis().set_visible(False)
+        #self.canvas.axes.get_yaxis().set_visible(False)
         if self.colorbar:
-            self.canvas.fig.colorbar(im, ax=self.canvas.axes)
-            self.canvas.axes.set_title(self.active_window.data.unit)
+            divider = make_axes_locatable(self.canvas.axes)
+            cax = divider.append_axes("right", size="3%", pad=0.02)
+            cb = self.canvas.fig.colorbar(im, cax=cax)
+            cb.ax.set_title(self.active_window.data.unit)
+            # self.canvas.axes.set_position([0.0, 0.08, 0.9, 0.84])
         if not self.rulers:
             self.canvas.axes.get_xaxis().set_visible(False)
             self.canvas.axes.get_yaxis().set_visible(False)
+        else:
+            self.canvas.axes.set_xlabel(f'x [{self.active_window.data.xunit}]', fontsize=self.fontsize)
+            self.canvas.axes.set_ylabel(f'y [{self.active_window.data.xunit}]', fontsize=self.fontsize)
         if self.scale_bar:
             self._draw_scale_bar()
         if not self.colorbar and not self.rulers:
             self.canvas.axes.set_frame_on(False)
-            self.canvas.axes.set_position([0., 0., 1, 1])
-        self.canvas.axes.set_aspect('equal')
+            # self.canvas.axes.set_position([0., 0., 1, 1])
+
+        self.canvas.fig.tight_layout(pad=0)
         self.canvas.draw()
 
     def _draw_scale_bar(self):
@@ -123,7 +180,8 @@ class ExportWindow(QMainWindow):
         line = matplotlib.lines.Line2D([x1, x2],
                                        [y1, y2], linewidth=0.01 * shape[1],
                                        color='black')
-        text = matplotlib.text.Text(x=self.active_window.data.X[1, round(0.2 * shape[0])], y=self.active_window.data.Y[round(0.15 * shape[1]), 1],
+        text = matplotlib.text.Text(x=self.active_window.data.X[1, round(0.2 * shape[0])],
+                                    y=self.active_window.data.Y[round(0.15 * shape[1]), 1],
                                     text=text,
                                     horizontalalignment='center', fontsize=13)
         self.canvas.axes.add_line(line)
@@ -137,7 +195,7 @@ class ExportWindow(QMainWindow):
 
     def apply(self):
         file, _ = QFileDialog.getSaveFileName(self, caption="Save .png", filter="Images (*.png)")
-        self.canvas.fig.savefig(file, format = self.filetype)
+        self.canvas.fig.savefig(file, format=self.filetype, dpi=self.dpi)
 
     def cancel(self):
         self.hide()
@@ -149,9 +207,10 @@ class ExportWindow(QMainWindow):
             self.parent.export_win_active = False
         return False
 
+
 class FigureCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
-        #self.axes.set_position([0.1, 0.2, 0.85, 0.78])
+        # self.axes.set_position([0.1, 0.2, 0.85, 0.78])
         super(FigureCanvas, self).__init__(self.fig)
