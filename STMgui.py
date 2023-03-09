@@ -46,6 +46,7 @@ class MainWindow(QMainWindow):
         self.hist_win_active = False
         self.fft_win_active = False
         self.scale_win_active = False
+        self.export_win_active =False
         # Creating processing windows
         self.filterWin = FilterWindow(self)
         self.profileWin = ProfileWindow(self)
@@ -130,8 +131,19 @@ class MainWindow(QMainWindow):
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(resources_path("icons/redo.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.redo_button.setIcon(icon)
-        self.redo_button.setIconSize(QtCore.QSize(50, 50))
+        self.redo_button.setIconSize(QtCore.QSize(button_size, button_size))
         self.grid_layout1.addWidget(self.redo_button, 0, 3, 1, 1)
+
+        self.export_button = QtWidgets.QPushButton(self.centralwidget)
+        self.export_button.setObjectName("export_button")
+        self.export_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.export_button.setMaximumSize(QtCore.QSize(button_size, button_size))
+        self.export_button.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/export.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.export_button.setIcon(icon)
+        self.export_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout1.addWidget(self.export_button, 0, 4, 1, 1)
 
         self.set_zero_button = QtWidgets.QPushButton(self.centralwidget)
         self.set_zero_button.setObjectName("Set_zeto_button")
@@ -384,6 +396,7 @@ class MainWindow(QMainWindow):
         self.openxyzButton.clicked.connect(self.openXYZFile)
         self.undo_button.clicked.connect(self.undoEdit)
         self.redo_button.clicked.connect(self.redoEdit)
+        self.export_button.clicked.connect(self.export)
         self.level_linewise_button.clicked.connect(self.levelEdit)
         self.level_plane_button.clicked.connect(self.level_planeEdit)
         self.set_zero_button.clicked.connect(self.setZeroLevelEdit)
@@ -398,6 +411,7 @@ class MainWindow(QMainWindow):
 
     def _update_push_buttons(self):
         if self.active_result_window == None:
+            self.export_button.setDisabled(True)
             self.level_linewise_button.setDisabled(True)
             self.level_plane_button.setDisabled(True)
             self.undo_button.setDisabled(True)
@@ -414,6 +428,7 @@ class MainWindow(QMainWindow):
 
         else:
             active_window = self.results_windows[self.active_result_window]
+            self.export_button.setDisabled(False)
             if isinstance(active_window, TopographyWindow):
                 self.level_linewise_button.setDisabled(False)
                 self.level_plane_button.setDisabled(False)
@@ -450,9 +465,12 @@ class MainWindow(QMainWindow):
                 self.redo_button.setDisabled(True)
 
     def _update_menu(self):
+        # Deactivate buttons for choosing image by default
         for button in self.change_image_group.actions():
             button.setChecked(False)
+        # Deactivate buttons when there is no result windows active
         if self.active_result_window == None:
+            self.export_action.setDisabled(True)
             self.rotate_clockwise_action.setDisabled(True)
             self.rotate_anticlockwise_action.setDisabled(True)
             self.mirror_ud_action.setDisabled(True)
@@ -478,6 +496,7 @@ class MainWindow(QMainWindow):
             active_window = self.results_windows[self.active_result_window]
             if isinstance(active_window, ResultWindow):
                 self.save_png_action.setDisabled(False)
+                self.export_action.setDisabled(False)
             if isinstance(active_window, TopographyWindow):
                 self.scale_action.setDisabled(False)
                 self.rotate_clockwise_action.setDisabled(False)
@@ -643,7 +662,7 @@ class MainWindow(QMainWindow):
         return ret, input_points.value(), input_lines.value(), input_unit.currentText()
 
     def export(self):
-        if not self.profile_win_active:
+        if not self.export_win_active:
             self.export_win.show()
             self.export_win.update()
         else:
