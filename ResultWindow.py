@@ -144,12 +144,19 @@ class TopographyWindow(ResultWindow):
         self.scale_bar = True
 
         self.first_point = None
-        self.profile_lines = []
+        self.profile_lines = [[] for i in range(4)]
+
+        self.active_ax = self.data.active_ax
 
         # Setting window name
         if name is None:
-            self.setWindowTitle(data.filename)
+            self.setWindowTitle(data.name)
         self.show()
+        self.draw()
+
+    def change_image(self, ax):
+        self.data.change_ax(ax)
+        self.active_ax = ax
         self.draw()
 
     def draw(self):
@@ -170,8 +177,8 @@ class TopographyWindow(ResultWindow):
     def _draw_profile_lines(self):
         if self.first_point != None:
             self.first_point.draw_point()
-        if self.profile_lines != []:
-            for x in self.profile_lines:
+        if self.profile_lines[self.active_ax] != []:
+            for x in self.profile_lines[self.active_ax]:
                 x.draw_profile()
         self.parent.profileWin.update_plot()
 
@@ -216,7 +223,7 @@ class TopographyWindow(ResultWindow):
             else:
                 second_point = Point(parent=self, x=x, y=y, x_index=point, y_index=line, size=self.point_size)
                 profile_line = Profile(parent=self, first_point=self.first_point, second_point=second_point)
-                self.profile_lines.append(profile_line)
+                self.profile_lines[self.active_ax].append(profile_line)
                 self.first_point = None
                 self._draw_profile(profile_line)
 
@@ -229,9 +236,9 @@ class TopographyWindow(ResultWindow):
             else:
                 return
         else:
-            for enum, profile in enumerate(self.profile_lines):
+            for enum, profile in enumerate(self.profile_lines[self.active_ax]):
                 if profile.first_point.point == artist or profile.second_point.point == artist:
-                    self.profile_lines.pop(enum)
+                    self.profile_lines[self.active_ax].pop(enum)
         self.draw()
 
     def mouse_release(self, e):

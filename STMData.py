@@ -66,9 +66,8 @@ class STMData:
 
     def update_unit(self, array, unit):
         if unit[-1] == 'm' or unit[0] == 'Å':
-            if unit == 'm':
-                unit = ''
-            array = array*(1/self.UNITS_PREFIXES[unit[0]])
+            if unit != 'm':
+                array = array*(1/self.UNITS_PREFIXES[unit[0]])
             unit = 'm'
             array, unit = self.auto_set_unit(array, unit)
             return array, unit
@@ -83,7 +82,7 @@ class STMData:
         if unit[-1] == 'm' or unit[0] == 'Å':
             if unit != 'm':
                 array = array*(1/self.UNITS_PREFIXES[unit[0]])
-            unit = 'm'
+                unit = 'm'
             return array, unit
         else:
             if len(unit) == 2:

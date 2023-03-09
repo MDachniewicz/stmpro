@@ -9,13 +9,18 @@ import itertools
 from STMData import STMData
 import Filters
 import Curves
+import Images
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 class Topography(STMData):
+    AXES = ['Forward-Up', 'Backward-Up', 'Forward-Down', 'Backward-Down']
 
     def __init__(self, filetype, data, unit='m', ax=0):
+        self.available_axes = []
+        self.active_ax = ax
+        self.z_data = []
         if filetype == 'mtrx':
             self.__initMtrx(data, ax)
 
@@ -25,7 +30,12 @@ class Topography(STMData):
         self.X, self.xunit = self.auto_set_unit(self.X, self.xunit)
         self.Y = self.set_unit(self.Y, self.yunit, self.xunit)
         self.yunit = self.xunit
-        self.Z, self.unit = self.auto_set_unit(self.Z, self.unit)
+
+        #for enum, z in enumerate(self.z_data):
+        #    if self.available_axes[enum]:
+        #        self.z_data[enum], self.unit = self.auto_set_unit(z, self.unit)
+
+        self.Z, self.unit = self.update_unit(self.Z, self.unit)
 
     def __initMtrx(self, mtrx, ax):
         self.filetype = mtrx.datatype
@@ -35,36 +45,26 @@ class Topography(STMData):
         self.filename = mtrx.file
         self.xunit = 'm'
         self.yunit = 'm'
+        self.active_ax = 0
+        self.z_data.append(mtrx.imageForwUp)
+        self.z_data.append(mtrx.imageBackUp)
+        self.z_data.append(mtrx.imageForwDown)
+        self.z_data.append(mtrx.imageBackDown)
+        self._available_axes()
+        self.change_ax(ax=None)
         if self.filetype == 'Z':
             self.__initMtrxZ(mtrx, ax)
         if self.filetype == 'I':
             self.__initMtrxI(mtrx, ax)
 
-    def __initMtrxZ(self, mtrx, ax=0):
+    def __initMtrxZ(self, mtrx, ax=None):
         self.unit = 'm'
-
-        if ax == 0:
-            self.Z = mtrx.imageForwUp
-            self.name = 'Topography Image Forward-Up ' + mtrx.file
-        elif ax == 1:
-            self.Z = mtrx.imageBackUp
-        elif ax == 2:
-            self.Z = mtrx.imageForwDown
-        elif ax == 3:
-            self.Z = mtrx.imageBackDown
+        self.name = f'Topography Image {self.AXES[self.active_ax]} {mtrx.file}'
         self.set_zero_level()
 
-    def __initMtrxI(self, mtrx, ax=0):
+    def __initMtrxI(self, mtrx, ax=None):
         self.unit = 'A'
-        if ax == 0:
-            self.Z = mtrx.imageForwUp
-            self.name = 'Current Image Forward-Up ' + mtrx.file
-        elif ax == 1:
-            self.Z = mtrx.imageBackUp
-        elif ax == 2:
-            self.Z = mtrx.imageForwDown
-        elif ax == 3:
-            self.Z = mtrx.imageBackDown
+        self.name = f'Current Image Forward-Up {self.AXES[self.active_ax]} {mtrx.file}'
 
     def __initXYZ(self, data, unit):
         self.X = data[0]
@@ -74,6 +74,27 @@ class Topography(STMData):
         self.xunit = unit
         self.yunit = unit
         self.filename = data[3]
+
+    def _available_axes(self):
+        for x in self.z_data:
+            if x == []:
+                self.available_axes.append(False)
+            else:
+                self.available_axes.append(True)
+
+    def change_ax(self, ax=None):
+        if ax is None:
+            for enum, x in enumerate(self.available_axes):
+                if x != 0:
+                    self.Z = self.z_data[enum]
+                    self.active_ax = enum
+                    return
+        else:
+            self.Z, si_unit  = self.unit_to_si(self.Z, self.unit)
+            self.Z, self.z_data[self.active_ax] = self.z_data[ax], self.Z
+            self.active_ax = ax
+            self.Z, self.unit = self.update_unit(self.Z, si_unit)
+            #self.Z, self.unit = self.auto_set_unit(self.Z, self.unit)
 
     def plotData(self, ax=None):
         if ax:
@@ -205,6 +226,13 @@ class Topography(STMData):
         z = self.Z.reshape(-1, 1)
         hist, bin_edges = np.histogram(z, n_bins)
         return hist, bin_edges
+
+    # FFT
+    def fft(self):
+        return Images.fft_image(self.Z)
+
+    def ifft(self, fft_image):
+        return Images.ifft_image(fft_image)
 
 
 class ProfileData(STMData):

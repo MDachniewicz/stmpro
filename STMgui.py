@@ -9,7 +9,7 @@ import os, sys
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import (QMainWindow, QMenu,
-                             QAction, QFileDialog)
+                             QAction, QFileDialog, QActionGroup)
 
 import Files
 from ResultWindow import ResultWindow, SpectroscopyWindow, TopographyWindow
@@ -45,12 +45,14 @@ class MainWindow(QMainWindow):
         self.hist_win_active = False
         self.fft_win_active = False
         self.scale_win_active = False
+        self.export_win_active =False
         # Creating processing windows
         self.filterWin = FilterWindow(self)
         self.profileWin = ProfileWindow(self)
         self.hist_win = HistogramWindow(self)
         self.fft_win = FourierWindow(self)
         self.scale_win = ScaleWindow(self)
+        self.export_win = ExportWindow(self)
         # First update of menus, buttons and windows
         self._update_menu()
         self._update_push_buttons()
@@ -128,8 +130,19 @@ class MainWindow(QMainWindow):
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(resources_path("icons/redo.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.redo_button.setIcon(icon)
-        self.redo_button.setIconSize(QtCore.QSize(50, 50))
+        self.redo_button.setIconSize(QtCore.QSize(button_size, button_size))
         self.grid_layout1.addWidget(self.redo_button, 0, 3, 1, 1)
+
+        self.export_button = QtWidgets.QPushButton(self.centralwidget)
+        self.export_button.setObjectName("export_button")
+        self.export_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.export_button.setMaximumSize(QtCore.QSize(button_size, button_size))
+        self.export_button.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(resources_path("icons/export.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.export_button.setIcon(icon)
+        self.export_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout1.addWidget(self.export_button, 0, 4, 1, 1)
 
         self.set_zero_button = QtWidgets.QPushButton(self.centralwidget)
         self.set_zero_button.setObjectName("Set_zeto_button")
@@ -269,6 +282,7 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(self.openXYZAction)
         fileMenu.addAction(self.saveXYZAction)
         fileMenu.addAction(self.save_png_action)
+        fileMenu.addAction(self.export_action)
         fileMenu.addAction(self.exitAction)
         # Edit Menu
         editMenu = menuBar.addMenu("&Edit")
@@ -291,6 +305,13 @@ class MainWindow(QMainWindow):
         editMenu.addAction(self.profileAction)
         editMenu.addAction(self.histAction)
         editMenu.addAction(self.fft_action)
+        #Topography Menu
+        topography_menu = menuBar.addMenu("&Topography")
+        select_ax_menu = topography_menu.addMenu("&Select image")
+        select_ax_menu.addAction(self.change_image1_action)
+        select_ax_menu.addAction(self.change_image2_action)
+        select_ax_menu.addAction(self.change_image3_action)
+        select_ax_menu.addAction(self.change_image4_action)
         # Help Menu
         helpMenu = menuBar.addMenu("&Help")
         helpMenu.addAction(self.aboutAction)
@@ -301,6 +322,7 @@ class MainWindow(QMainWindow):
         self.openXYZAction = QAction("&Open XYZ...", self)
         self.saveXYZAction = QAction("&Save XYZ", self)
         self.save_png_action = QAction("&Save PNG", self)
+        self.export_action = QAction("&Export...", self)
         self.exitAction = QAction("&Exit", self)
         # Edit
         self.undoAction = QAction("&Undo", self)
@@ -319,6 +341,21 @@ class MainWindow(QMainWindow):
         self.profileAction = QAction("Profile...", self)
         self.histAction = QAction("Histogram...", self)
         self.fft_action = QAction("FFT...", self)
+        # Topography
+        # Scanning direction selection
+        self.change_image_group = QActionGroup(self)
+        self.change_image1_action = QAction("&Forward-Up", self)
+        self.change_image2_action = QAction("&Backward-Up", self)
+        self.change_image3_action = QAction("&Forward-Down", self)
+        self.change_image4_action = QAction("&Backward-Down", self)
+        self.change_image1_action.setCheckable(True)
+        self.change_image2_action.setCheckable(True)
+        self.change_image3_action.setCheckable(True)
+        self.change_image4_action.setCheckable(True)
+        self.change_image_group.addAction(self.change_image1_action)
+        self.change_image_group.addAction(self.change_image2_action)
+        self.change_image_group.addAction(self.change_image3_action)
+        self.change_image_group.addAction(self.change_image4_action)
         # Help
         self.helpContentAction = QAction("&Help Content", self)
         self.aboutAction = QAction("&About", self)
@@ -328,6 +365,7 @@ class MainWindow(QMainWindow):
         self.openXYZAction.triggered.connect(self.openXYZFile)
         self.saveXYZAction.triggered.connect(self.saveXYZFile)
         self.save_png_action.triggered.connect(self.save_png)
+        self.export_action.triggered.connect(self.export)
         self.exitAction.triggered.connect(self.exitFile)
 
         self.redoAction.triggered.connect(self.redoEdit)
@@ -345,6 +383,11 @@ class MainWindow(QMainWindow):
         self.histAction.triggered.connect(self.hist_edit)
         self.fft_action.triggered.connect(self.fft_edit)
 
+        self.change_image1_action.triggered.connect(self.change_image)
+        self.change_image2_action.triggered.connect(self.change_image)
+        self.change_image3_action.triggered.connect(self.change_image)
+        self.change_image4_action.triggered.connect(self.change_image)
+
         self.aboutAction.triggered.connect(self.aboutHelp)
 
     def _connect_push_buttons(self):
@@ -352,6 +395,7 @@ class MainWindow(QMainWindow):
         self.openxyzButton.clicked.connect(self.openXYZFile)
         self.undo_button.clicked.connect(self.undoEdit)
         self.redo_button.clicked.connect(self.redoEdit)
+        self.export_button.clicked.connect(self.export)
         self.level_linewise_button.clicked.connect(self.levelEdit)
         self.level_plane_button.clicked.connect(self.level_planeEdit)
         self.set_zero_button.clicked.connect(self.setZeroLevelEdit)
@@ -366,6 +410,7 @@ class MainWindow(QMainWindow):
 
     def _update_push_buttons(self):
         if self.active_result_window == None:
+            self.export_button.setDisabled(True)
             self.level_linewise_button.setDisabled(True)
             self.level_plane_button.setDisabled(True)
             self.undo_button.setDisabled(True)
@@ -382,6 +427,7 @@ class MainWindow(QMainWindow):
 
         else:
             active_window = self.results_windows[self.active_result_window]
+            self.export_button.setDisabled(False)
             if isinstance(active_window, TopographyWindow):
                 self.level_linewise_button.setDisabled(False)
                 self.level_plane_button.setDisabled(False)
@@ -418,7 +464,12 @@ class MainWindow(QMainWindow):
                 self.redo_button.setDisabled(True)
 
     def _update_menu(self):
+        # Deactivate buttons for choosing image by default
+        for button in self.change_image_group.actions():
+            button.setChecked(False)
+        # Deactivate buttons when there is no result windows active
         if self.active_result_window == None:
+            self.export_action.setDisabled(True)
             self.rotate_clockwise_action.setDisabled(True)
             self.rotate_anticlockwise_action.setDisabled(True)
             self.mirror_ud_action.setDisabled(True)
@@ -435,11 +486,16 @@ class MainWindow(QMainWindow):
             self.save_png_action.setDisabled(True)
             self.undoAction.setDisabled(True)
             self.redoAction.setDisabled(True)
+            self.change_image1_action.setDisabled(True)
+            self.change_image2_action.setDisabled(True)
+            self.change_image3_action.setDisabled(True)
+            self.change_image4_action.setDisabled(True)
 
         else:
             active_window = self.results_windows[self.active_result_window]
             if isinstance(active_window, ResultWindow):
                 self.save_png_action.setDisabled(False)
+                self.export_action.setDisabled(False)
             if isinstance(active_window, TopographyWindow):
                 self.scale_action.setDisabled(False)
                 self.rotate_clockwise_action.setDisabled(False)
@@ -454,6 +510,10 @@ class MainWindow(QMainWindow):
                 self.histAction.setDisabled(False)
                 self.fft_action.setDisabled(False)
                 self.saveXYZAction.setDisabled(False)
+                self.change_image_group.actions()[active_window.data.active_ax].setChecked(True)
+                for button, av in zip(self.change_image_group.actions(), active_window.data.available_axes):
+                    if av:
+                        button.setDisabled(False)
             if isinstance(active_window, SpectroscopyWindow):
                 self.scale_action.setDisabled(True)
                 self.rotate_clockwise_action.setDisabled(True)
@@ -468,6 +528,10 @@ class MainWindow(QMainWindow):
                 self.histAction.setDisabled(True)
                 self.fft_action.setDisabled(True)
                 self.saveXYZAction.setDisabled(True)
+                self.change_image1_action.setDisabled(True)
+                self.change_image2_action.setDisabled(True)
+                self.change_image3_action.setDisabled(True)
+                self.change_image4_action.setDisabled(True)
             if active_window.winState.undoPossible():
                 self.undoAction.setDisabled(False)
             else:
@@ -596,6 +660,14 @@ class MainWindow(QMainWindow):
         ret = dialog.exec_() == QtWidgets.QDialog.Accepted
         return ret, input_points.value(), input_lines.value(), input_unit.currentText()
 
+    def export(self):
+        if not self.export_win_active:
+            self.export_win.show()
+            self.export_win.update()
+        else:
+            self.export_win.hide()
+
+
     def exitFile(self):
         self.profileWin.close()
         self.hist_win.close()
@@ -706,10 +778,17 @@ class MainWindow(QMainWindow):
         self.fft_win_active = True
         self.update_windows()
 
+    def change_image(self):
+        result = self.results_windows[self.active_result_window]
+        for enum, button in enumerate(self.change_image_group.actions()):
+            if button.isChecked():
+                ax=enum
+        result.change_image(ax)
+
     def aboutHelp(self):
         QtWidgets.QMessageBox.question(self,
                                        "About",
-                                       "STMpro 0.0.6 pre-alpha",
+                                       "STMpro 0.0.7 pre-alpha",
                                        QtWidgets.QMessageBox.Ok)
 
     def change_mode(self, mode):
