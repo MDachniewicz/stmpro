@@ -9,7 +9,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 class ExportWindow(QMainWindow):
-    FILETYPES_TOPO = ['png', 'jpg']
+    FILETYPES_TOPO = ['png', 'jpg', 'svg', 'eps']
     COLORMAPS = ['afmhot', 'hot', 'gist_heat', 'gist_gray']
     COLORS = ['black', 'white', 'blue', 'green']
 
@@ -18,9 +18,6 @@ class ExportWindow(QMainWindow):
         self.parent = parent
         self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.active_window = None
-        self._setup()
-        self._createActions()
-        self._connectActions()
 
         self.filetype = 'png'
         self.colorbar = False
@@ -30,7 +27,12 @@ class ExportWindow(QMainWindow):
         self.scalebar_color = 'black'
         self.scalebar_fontsize = 13
         self.dpi = 300
-        self.fontsize = 10
+        self.fontsize_labels = 11
+        self.fontsize = 11
+
+        self._setup()
+        self._createActions()
+        self._connectActions()
 
     def _setup(self):
 
@@ -53,6 +55,9 @@ class ExportWindow(QMainWindow):
         self.canvas.setMinimumSize(400, 400)
         self.canvas.setMaximumSize(400, 400)
         self.layout_preview.addWidget(self.canvas)
+
+        self._create_topography_filetypes()
+        self._create_image_settings()
 
     def _create_topography_filetypes(self):
         self.combobox_filetypes = QComboBox(self)
@@ -107,6 +112,13 @@ class ExportWindow(QMainWindow):
         self.setting_fontsize.setValue(self.fontsize)
         self.setting_fontsize.valueChanged.connect(self._fontsize_changed)
         self.setting_ruler_layout.addWidget(self.setting_fontsize)
+        self.label_fontsize_labels = QtWidgets.QLabel('Lables font size:', self.central_widget)
+        self.setting_ruler_layout.addWidget(self.label_fontsize_labels)
+        self.setting_fontsize_labels = QtWidgets.QSpinBox(self.central_widget)
+        self.setting_fontsize_labels.setRange(1, 60)
+        self.setting_fontsize_labels.setValue(self.fontsize)
+        self.setting_fontsize_labels.valueChanged.connect(self._fontsize_labels_changed)
+        self.setting_ruler_layout.addWidget(self.setting_fontsize_labels)
         self.layout_settings.addLayout(self.setting_ruler_layout)
 
         self.setting_dpi_layout = QtWidgets.QHBoxLayout(self.central_widget)
@@ -149,6 +161,10 @@ class ExportWindow(QMainWindow):
         self.fontsize = value
         self.draw()
 
+    def _fontsize_labels_changed(self, value):
+        self.fontsize_labels = value
+        self.draw()
+
     def _scalebar_fontsize_changed(self, value):
         self.scalebar_fontsize = value
         self.draw()
@@ -171,15 +187,50 @@ class ExportWindow(QMainWindow):
         self.cancelButton.clicked.connect(self.cancel)
         self.applyButton.clicked.connect(self.apply)
 
+    def _hide_from_layout(self, layout):
+        for i in reversed(range(layout.count())):
+            if layout.itemAt(i).widget() is None:
+                self._hide_from_layout(layout.itemAt(i).layout())
+            else:
+                layout.itemAt(i).widget().hide()
+
+    def _show_topography_filetypes(self):
+        self.combobox_filetypes.show()
+
+    def _show_image_settings(self):
+        self.setting_colorbar.show()
+        self.label_colormap.show()
+        self.setting_colormap.show()
+
+        self.setting_scalebar.show()
+        self.setting_scalebar_color.show()
+        self.label_scalebar_fontsize.show()
+        self.setting_scalebar_fontsize.show()
+
+        self.setting_ruler.show()
+        self.label_fontsize.show()
+        self.setting_fontsize.show()
+        self.label_fontsize_labels.show()
+        self.setting_fontsize_labels.show()
+
+        self.label_dpi.show()
+        self.setting_dpi.show()
+
     def update(self):
-        for i in reversed(range(self.layout_settings.count())):
-            self.layout_settings.itemAt(i).widget().setParent(None)
+        self._hide_from_layout(self.layout_settings)
         if self.parent.active_result_window is not None:
             self.active_window = self.parent.results_windows[self.parent.active_result_window]
             if isinstance(self.active_window, ResultWindow.TopographyWindow):
-                self._create_topography_filetypes()
-                self._create_image_settings()
+                self._show_topography_filetypes()
+                self._show_image_settings()
             self.draw()
+
+    def _delete_from_layout(self, layout):
+        for i in reversed(range(layout.count())):
+            if layout.itemAt(i).widget() is None:
+                self._delete_from_layout(layout.itemAt(i).layout())
+            else:
+                layout.itemAt(i).widget().setParent(None)
 
     def draw(self):
         self.canvas.fig.clf()
@@ -196,8 +247,9 @@ class ExportWindow(QMainWindow):
             self.canvas.axes.get_xaxis().set_visible(False)
             self.canvas.axes.get_yaxis().set_visible(False)
         else:
-            self.canvas.axes.set_xlabel(f'x [{self.active_window.data.xunit}]', fontsize=self.fontsize)
-            self.canvas.axes.set_ylabel(f'y [{self.active_window.data.xunit}]', fontsize=self.fontsize)
+            self.canvas.axes.set_xlabel(f'x [{self.active_window.data.xunit}]', fontsize=self.fontsize_labels)
+            self.canvas.axes.set_ylabel(f'y [{self.active_window.data.xunit}]', fontsize=self.fontsize_labels)
+            self.canvas.axes.tick_params(axis='both', which='major', labelsize=self.fontsize)
         if self.scalebar:
             self._draw_scale_bar()
         if not self.colorbar and not self.rulers:
