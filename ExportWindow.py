@@ -29,6 +29,8 @@ class ExportWindow(QMainWindow):
         self.dpi = 300
         self.fontsize_labels = 11
         self.fontsize = 11
+        self.profiles = False
+        self.profiles_color = 'black'
 
         self._setup()
         self._createActions()
@@ -70,6 +72,19 @@ class ExportWindow(QMainWindow):
         self.setting_colorbar.setChecked(self.colorbar)
         self.setting_colorbar.toggled.connect(self._colorbar_changed)
         self.layout_settings.addWidget(self.setting_colorbar)
+
+        self.setting_profiles_layout = QtWidgets.QHBoxLayout(self.central_widget)
+        self.setting_profiles = QCheckBox('Profile Lines', self)
+        self.setting_profiles.setChecked(self.profiles)
+        self.setting_profiles.toggled.connect(self._profiles_changed)
+        self.setting_profiles_layout.addWidget(self.setting_profiles)
+        self.label_profiles_color = QtWidgets.QLabel('Color:', self.central_widget)
+        self.setting_profiles_layout.addWidget(self.label_profiles_color)
+        self.setting_profiles_color = QtWidgets.QComboBox(self.central_widget)
+        self.setting_profiles_color.addItems(self.COLORS)
+        self.setting_profiles_color.currentTextChanged.connect(self._profiles_color_changed)
+        self.setting_profiles_layout.addWidget(self.setting_profiles_color)
+        self.layout_settings.addLayout(self.setting_profiles_layout)
 
         self.setting_colormap_layout = QtWidgets.QHBoxLayout(self.central_widget)
         self.label_colormap = QtWidgets.QLabel('Colormap:', self.central_widget)
@@ -138,6 +153,14 @@ class ExportWindow(QMainWindow):
         self.colorbar = self.setting_colorbar.isChecked()
         self.draw()
 
+    def _profiles_changed(self):
+        self.profiles = self.setting_profiles.isChecked()
+        self.draw()
+
+    def _profiles_color_changed(self, color):
+        self.profiles_color = color
+        self.draw()
+
     def _colormap_changed(self, colormap):
         self.colormap = colormap
         self.draw()
@@ -199,6 +222,11 @@ class ExportWindow(QMainWindow):
 
     def _show_image_settings(self):
         self.setting_colorbar.show()
+
+        self.setting_profiles.show()
+        self.label_profiles_color.show()
+        self.setting_profiles_color.show()
+
         self.label_colormap.show()
         self.setting_colormap.show()
 
@@ -238,6 +266,8 @@ class ExportWindow(QMainWindow):
         im = self.canvas.axes.pcolormesh(self.active_window.data.X, self.active_window.data.Y,
                                          self.active_window.data.Z, cmap=self.colormap)
         self.canvas.axes.set_aspect('equal')
+        if self.profiles:
+            self._draw_profile_lines()
         if self.colorbar:
             divider = make_axes_locatable(self.canvas.axes)
             self.canvas.caxes = divider.append_axes("right", size="3%", pad=0.02)
@@ -271,13 +301,25 @@ class ExportWindow(QMainWindow):
         y2 = self.active_window.data.Y[round(0.12 * shape[0]), 1]
         line = matplotlib.lines.Line2D([x1, x2],
                                        [y1, y2], linewidth=0.01 * shape[1],
-                                       color=self.scalebar_color)
+                                       color=self.scalebar_color, solid_capstyle='butt')
         text = matplotlib.text.Text(x=self.active_window.data.X[1, round(0.2 * shape[0])],
                                     y=self.active_window.data.Y[round(0.15 * shape[1]), 1],
                                     text=text,
                                     horizontalalignment='center', fontsize=self.scalebar_fontsize, color=self.scalebar_color)
         self.canvas.axes.add_line(line)
         self.canvas.axes.add_artist(text)
+
+    def _draw_profile_lines(self):
+        if self.active_window.profile_lines[self.active_window.active_ax] != []:
+            for profile in self.active_window.profile_lines[self.active_window.active_ax]:
+                x1 = profile.first_point.x
+                x2 = profile.second_point.x
+                y1 = profile.first_point.y
+                y2 = profile.second_point.y
+                line = matplotlib.lines.Line2D([x1, x2],
+                                               [y1, y2],
+                                               color=self.profiles_color, solid_capstyle='butt')
+                self.canvas.axes.add_line(line)
 
     def disable(self):
         self.applyButton.setDisabled(True)

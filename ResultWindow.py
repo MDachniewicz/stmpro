@@ -202,7 +202,7 @@ class TopographyWindow(ResultWindow):
         y2 = self.data.Y[round(0.12 * shape[0]), 1]
         line = matplotlib.lines.Line2D([x1, x2],
                                        [y1, y2], linewidth=0.01 * shape[1],
-                                       color='black')
+                                       color='black', solid_capstyle='butt')
         text = matplotlib.text.Text(x=self.data.X[1, round(0.2 * shape[0])], y=self.data.Y[round(0.15 * shape[1]), 1],
                                     text=text,
                                     horizontalalignment='center', fontsize=13)
