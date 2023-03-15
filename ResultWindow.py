@@ -155,11 +155,13 @@ class TopographyWindow(ResultWindow):
         self.draw()
 
     def change_image(self, ax):
+        self.winState.saveState(self.data)
         self.data.change_ax(ax)
         self.active_ax = ax
         self.draw()
 
     def draw(self):
+        self.setWindowTitle(self.data.name)
         self.canvasImg.axes.cla()
         self.canvasColorbar.axes.cla()
         im = self.canvasImg.axes.pcolormesh(self.data.X, self.data.Y, self.data.Z, cmap='afmhot', picker=True)
@@ -252,6 +254,65 @@ class SpectroscopyWindow(ResultWindow):
     def __init__(self, data=None, parent=None, width=4.5, height=4, dpi=100, name=None):
         super().__init__(None, parent, width, height, dpi, name)
         self.data = data
+
+        self.forward = True
+        if self.data.ramp_reversal:
+            self.backward = True
+        else:
+            self.backward = False
+
+        self.canvas = FigureCanvas(self)
+        self._setup_ui()
+
+        self.show()
+        self.draw()
+
+    def _setup_ui(self):
+        self.central_widget = QtWidgets.QWidget(self)
+        self.layout_main = QtWidgets.QVBoxLayout(self.central_widget)
+        self.layout_main.addWidget(self.canvas)
+        self.layout_controls = QtWidgets.QVBoxLayout(self.central_widget)
+
+        self.setting_forward = QtWidgets.QCheckBox('Forward', self)
+        self.setting_forward.setChecked(self.forward)
+        self.setting_forward.toggled.connect(self._setting_forward_changed)
+        self.layout_controls.addWidget(self.setting_forward)
+
+        self.setting_backward = QtWidgets.QCheckBox('Backward', self)
+        self.setting_backward.setChecked(self.backward)
+        self.setting_backward.toggled.connect(self._setting_backward_changed)
+        self.layout_controls.addWidget(self.setting_backward)
+
+        self.layout_main.addLayout(self.layout_controls)
+        self.setCentralWidget(self.central_widget)
+
+    def _setting_forward_changed(self, value):
+        self.forward = self.setting_forward.isChecked()
+        self.draw()
+
+    def _setting_backward_changed(self, value):
+        self.backward = self.setting_backward.isChecked()
+        self.draw()
+
+    def draw(self):
+        self.canvas.axes.cla()
+        self.canvas.axes.grid(True)
+        if self.forward:
+            self.canvas.axes.plot(self.data.x, self.data.y_forward, color='blue')
+        if self.backward:
+            self.canvas.axes.plot(self.data.x, self.data.y_backward, color='red')
+        self.canvas.axes.set_xlabel(self.data.xunit)
+        self.canvas.axes.set_ylabel(self.data.unit)
+        self.canvas.fig.tight_layout(pad=0.1)
+        self.canvas.draw()
+
+
+class SpectroscopyMapWindow(ResultWindow):
+    def __init__(self, data, parent=None, width=4.5, height=4, dpi=100, name=None):
+        super(SpectroscopyMapWindow, self).__init__(data, parent, width, height, dpi, name)
+        self.data = data
+        self.active_plane = 0
+
         self.canvas = FigureCanvas(self)
         self.setCentralWidget(self.canvas)
         self.show()
@@ -259,12 +320,10 @@ class SpectroscopyWindow(ResultWindow):
 
     def draw(self):
         self.canvas.axes.cla()
-        self.canvas.axes.plot(self.data.V, self.data.current_forward)
+        self.canvas.axes.pcolormesh(self.data.x, self.data.y, self.data.z_forward[:, :, self.active_plane])
         self.canvas.axes.set_xlabel(self.data.xunit)
-        self.canvas.axes.set_ylabel(self.data.unit)
+        self.canvas.axes.set_ylabel(self.data.yunit)
         self.canvas.draw()
-
-
 
 
 class ProfileResultWindow(ResultWindow):

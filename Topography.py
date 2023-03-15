@@ -4,6 +4,7 @@ Created on Thu Jan 26 20:58:54 2023
 
 @author: marek
 """
+import os
 import numpy as np
 import itertools
 from STMData import STMData
@@ -18,6 +19,7 @@ class Topography(STMData):
     AXES = ['Forward-Up', 'Backward-Up', 'Forward-Down', 'Backward-Down']
 
     def __init__(self, filetype, data, unit='m', ax=0):
+        self.name = None
         self.available_axes = []
         self.active_ax = ax
         self.z_data = []
@@ -38,11 +40,11 @@ class Topography(STMData):
         self.Z, self.unit = self.update_unit(self.Z, self.unit)
 
     def __initMtrx(self, mtrx, ax):
-        self.filetype = mtrx.datatype
+        self.datatype = mtrx.datatype
         self.parameters = mtrx.parameter
         self.X = mtrx.x
         self.Y = mtrx.y
-        self.filename = mtrx.file
+        _, self.filename = os.path.split(mtrx.file)
         self.xunit = 'm'
         self.yunit = 'm'
         self.active_ax = 0
@@ -52,19 +54,19 @@ class Topography(STMData):
         self.z_data.append(mtrx.imageBackDown)
         self._available_axes()
         self.change_ax(ax=None)
-        if self.filetype == 'Z':
+        if self.datatype == 'Z':
             self.__initMtrxZ(mtrx, ax)
-        if self.filetype == 'I':
+        if self.datatype == 'I':
             self.__initMtrxI(mtrx, ax)
 
     def __initMtrxZ(self, mtrx, ax=None):
         self.unit = 'm'
-        self.name = f'Topography Image {self.AXES[self.active_ax]} {mtrx.file}'
+        self.name = f'Topography Image ({self.AXES[self.active_ax]}): {self.filename}'
         self.set_zero_level()
 
     def __initMtrxI(self, mtrx, ax=None):
         self.unit = 'A'
-        self.name = f'Current Image Forward-Up {self.AXES[self.active_ax]} {mtrx.file}'
+        self.name = f'Current Image ({self.AXES[self.active_ax]}): {self.filename}'
 
     def __initXYZ(self, data, unit):
         self.X = data[0]
@@ -94,8 +96,11 @@ class Topography(STMData):
             self.Z, self.z_data[self.active_ax] = self.z_data[ax], self.Z
             self.active_ax = ax
             self.Z, self.unit = self.update_unit(self.Z, si_unit)
-            #self.Z, self.unit = self.auto_set_unit(self.Z, self.unit)
-
+            if self.datatype == 'Z':
+                self.name = f'Topography Image ({self.AXES[self.active_ax]}): {self.filename}'
+            if self.datatype == 'I':
+                self.name = f'Current Image ({self.AXES[self.active_ax]}): {self.filename}'
+                
     def plotData(self, ax=None):
         if ax:
             im = ax.pcolor(self.X * 10 ** 9, self.Y * 10 ** 9, self.Z)

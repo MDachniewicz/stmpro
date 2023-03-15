@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (QMainWindow, QMenu,
                              QAction, QFileDialog, QActionGroup)
 
 import Files
-from ResultWindow import ResultWindow, SpectroscopyWindow, TopographyWindow
+from ResultWindow import ResultWindow, SpectroscopyWindow, SpectroscopyMapWindow, TopographyWindow
 from FilterWindow import FilterWindow
 from ProfileWindow import ProfileWindow
 from HistogramWindow import HistogramWindow
@@ -586,6 +586,8 @@ class MainWindow(QMainWindow):
             win = TopographyWindow(data=data, parent=self)
         if filetype == 'I(V)-curve':
             win = SpectroscopyWindow(data=data, parent=self)
+        if filetype == 'I(V)-map':
+            win = SpectroscopyMapWindow(data=data, parent=self)
         win.show()
 
     def openFile(self):

@@ -120,7 +120,7 @@ class ScaleWindow(QMainWindow):
                 self._update_zrange()
             if isinstance(self.active_window, ResultWindow.SpectroscopyWindow):
                 self._update_xrange()
-                self._update_zrange()
+                self._update_yrange()
 
     def x_factor_changed(self, value):
         self.x_factor=value
