@@ -26,7 +26,6 @@ class Matrix:
         self.imageForwDown = []
         self.imageBackDown = []
         self.V = None
-        self.vpoints = None
         self.mtrxRef = None
         self.currentForw = np.array([])
         self.currentBack = np.array([])
@@ -75,6 +74,7 @@ class Matrix:
 
         self.data = np.array(unpack(dataformat, data))
         self.scale_data()
+        self._processCurve()
         self._reshapeMapData()
 
     def _reshapeMapData(self):
@@ -145,20 +145,20 @@ class Matrix:
         rampReversal = self.parameter['Spectroscopy.Enable_Device_1_Ramp_Reversal'][0]
         vstart = self.parameter['Spectroscopy.Device_1_Start'][0]
         vend = self.parameter['Spectroscopy.Device_1_End'][0]
-        self.vpoints = self.parameter['Spectroscopy.Device_1_Points'][0]
+        vpoints = self.parameter['Spectroscopy.Device_1_Points'][0]
 
         if self.datatype == 'I(V)-curve' or self.datatype == 'I(V)-map':
             if self.datatype == 'I(V)-curve' and not rampReversal:
-                if self.data.size < self.vpoints:
-                    self.fill_data(self.vpoints)
+                if self.data.size < vpoints:
+                    self.fill_data(vpoints)
                 self.currentForw = self.data
             if self.datatype == 'I(V)-curve' and rampReversal:
-                if self.data.size < 2 * self.vpoints:
-                    self.fill_data(2 * self.vpoints)
-                self.currentForw = self.data[:self.vpoints]
-                self.currentBack = self.data[:self.vpoints - 1:-1]
+                if self.data.size < 2 * vpoints:
+                    self.fill_data(2 * vpoints)
+                self.currentForw = self.data[:vpoints]
+                self.currentBack = self.data[:vpoints - 1:-1]
 
-            self.V = np.linspace(vstart, vend, self.vpoints)
+            self.V = np.linspace(vstart, vend, vpoints)
 
     def _getReferenceFile(self):
         location = [x for x in self.parameter_marks if x[0:17] == 'MTRX$STS_LOCATION'][-1][18:]

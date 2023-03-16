@@ -62,7 +62,7 @@ class SpectroscopyMap(Spectroscopy):
         self.z_forward = None
         self.z_backward = None
         self.ramp_reversal = self.parameters['Spectroscopy.Enable_Device_1_Ramp_Reversal'][0]
-        print(data.mtrxRef)
+        #print(data.mtrxRef)
         self.z_forward = data.currentForw
         if self.ramp_reversal:
             self.z_backward = data.currentBack

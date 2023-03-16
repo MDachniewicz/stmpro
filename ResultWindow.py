@@ -243,11 +243,6 @@ class TopographyWindow(ResultWindow):
                     self.profile_lines[self.active_ax].pop(enum)
         self.draw()
 
-    def mouse_release(self, e):
-        pass
-
-    def mouse_move(self, e):
-        pass
 
 
 class SpectroscopyWindow(ResultWindow):
@@ -311,20 +306,117 @@ class SpectroscopyMapWindow(ResultWindow):
     def __init__(self, data, parent=None, width=4.5, height=4, dpi=100, name=None):
         super(SpectroscopyMapWindow, self).__init__(data, parent, width, height, dpi, name)
         self.data = data
+        self.im = None
         self.active_plane = 0
 
-        self.canvas = FigureCanvas(self)
-        self.setCentralWidget(self.canvas)
+        self._setup_ui()
         self.show()
         self.draw()
 
-    def draw(self):
-        self.canvas.axes.cla()
-        self.canvas.axes.pcolormesh(self.data.x, self.data.y, self.data.z_forward[:, :, self.active_plane])
-        self.canvas.axes.set_xlabel(self.data.xunit)
-        self.canvas.axes.set_ylabel(self.data.yunit)
-        self.canvas.draw()
+    def _setup_ui(self):
+        self.central_widget = QtWidgets.QWidget(self)
+        self.layout_main = QtWidgets.QVBoxLayout(self.central_widget)
 
+        self.layout_results = QtWidgets.QHBoxLayout(self.central_widget)
+        self.canvas_map = FigureCanvasImg(self)
+        self.canvas_colorbar = FigureCanvasColorbar(self)
+        self.canvas_colorbar.setMinimumWidth(100)
+        self.canvas_colorbar.setMaximumWidth(100)
+        self.canvas_plot = FigureCanvas(self)
+        self.layout_results.addWidget(self.canvas_map)
+        self.layout_results.addWidget(self.canvas_colorbar)
+        self.layout_results.addWidget(self.canvas_plot)
+        self.layout_main.addLayout(self.layout_results)
+
+        self.layout_controls = QtWidgets.QHBoxLayout(self.central_widget)
+        self.setting_plane = QtWidgets.QSpinBox(self.central_widget)
+        self.setting_plane.setRange(0, len(self.data.planes)-1)
+        self.setting_plane.setValue(self.active_plane)
+        self.setting_plane.valueChanged.connect(self._active_plane_changed)
+        self.layout_controls.addWidget(self.setting_plane)
+        self.layout_main.addLayout(self.layout_controls)
+
+        self.setCentralWidget(self.central_widget)
+
+
+        # First time drawing image and colorbar. Then draw() only updates colorbar instead of redrawing it. Significant performace difference.
+        self.im = self.canvas_map.axes.pcolormesh(self.data.x, self.data.y, self.data.z_forward[:, :, self.active_plane],
+                                             cmap='afmhot', picker=True)
+        self.cb = self.canvas_colorbar.fig.colorbar(self.im, cax=self.canvas_colorbar.axes)
+        self.canvas_colorbar.axes.set_title(self.data.unit)
+
+    def _active_plane_changed(self, value):
+        self.active_plane = value
+        self.draw()
+
+    def draw(self):
+        self.canvas_map.axes.cla()
+        self.im = self.canvas_map.axes.pcolormesh(self.data.x, self.data.y, self.data.z_forward[:, :, self.active_plane], cmap='afmhot', picker=True)
+        self.cb.update_normal(self.im)
+        self.canvas_colorbar.axes.set_title(self.data.unit)
+        self.canvas_map.axes.set_aspect('equal')
+        self.canvas_map.draw()
+        self.canvas_colorbar.draw()
+
+
+
+    def mouse_press(self, e, indices):
+        if e.inaxes != self.canvas_map:
+            return
+        if self.parent.interaction_mode == 'curve_picking':
+            line = int(indices / self.data.Z.shape[1])
+            point = int(indices % (self.data.Z.shape[0]))
+            x = self.data.X[line, point]
+            y = self.data.Y[line, point]
+            if self.first_point == None:
+                self.first_point = Point(parent=self, x=x, y=y, x_index=point, y_index=line, size=self.point_size)
+                self._draw_point(self.first_point)
+            else:
+                second_point = Point(parent=self, x=x, y=y, x_index=point, y_index=line, size=self.point_size)
+                profile_line = Profile(parent=self, first_point=self.first_point, second_point=second_point)
+                self.profile_lines[self.active_ax].append(profile_line)
+                self.first_point = None
+                self._draw_profile(profile_line)
+
+    def mouse_press_right(self, e, artist=None):
+        if e.inaxes != self.canvasImg.axes:
+            return
+        if artist == None:
+            if self.first_point != None:
+                self.first_point = None
+            else:
+                return
+        else:
+            for enum, profile in enumerate(self.profile_lines[self.active_ax]):
+                if profile.first_point.point == artist or profile.second_point.point == artist:
+                    self.profile_lines[self.active_ax].pop(enum)
+        self.draw()
+
+class SingleCurve():
+    def __init__(self, parent, x=0, y=0, x_index=None, y_index=None, size=1):
+        self.parent = parent
+        self.x_index = x_index
+        self.y_index = y_index
+        self.x = x
+        self.y = y
+        self.point = matplotlib.patches.Ellipse((x, y), size, size, fc='r', alpha=0.5, edgecolor='r')
+        self.point.set_picker(5)
+
+    def draw_point(self):
+        self.parent.canvasImg.axes.add_patch(self.point)
+
+class AreaCurves:
+    def __init__(self, parent, x=0, y=0, x_index=None, y_index=None, size=1):
+        self.parent = parent
+        self.x_index = x_index
+        self.y_index = y_index
+        self.x = x
+        self.y = y
+        self.point = matplotlib.patches.Ellipse((x, y), size, size, fc='r', alpha=0.5, edgecolor='r')
+        self.point.set_picker(5)
+
+    def draw_point(self):
+        self.parent.canvasImg.axes.add_patch(self.point)
 
 class ProfileResultWindow(ResultWindow):
     def __init__(self, profile=None, parent=None, width=4.5, height=4, dpi=100, name=None):
@@ -404,9 +496,9 @@ class HistogramResultWindow(ResultWindow):
 
 class FigureCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
-        self.fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = self.fig.add_subplot(111)
-        super(FigureCanvas, self).__init__(self.fig)
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        super(FigureCanvas, self).__init__(fig)
 
 
 class FigureCanvasColorbar(FigureCanvasQTAgg):
@@ -465,7 +557,7 @@ class FigureCanvasImg(FigureCanvasQTAgg):
         self.artist = None
 
     def on_move(self, e):
-        self.parent.mouse_move(e)
+        pass
 
     def on_pick(self, e):
         if isinstance(e.artist, matplotlib.patches.Ellipse):
