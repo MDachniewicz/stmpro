@@ -15,7 +15,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 from struct import unpack
 from datetime import datetime as dt
-import os, re
+import os
+import re
 
 
 class Matrix:
@@ -25,12 +26,15 @@ class Matrix:
         self.imageForwDown = []
         self.imageBackDown = []
         self.V = None
+        self.refFile = None
         self.mtrxRef = None
         self.currentForw = np.array([])
         self.currentBack = np.array([])
         self.parameter = {'BREF': '', 'XFER': {}, 'DICT': {}}
         self.parameter_marks = []
         self.axes = [[1, 0], [0, 0]]
+        self.prev_files = []
+        self.next_files = []
 
         self.file = file
         self.findHeader(file)
@@ -73,7 +77,11 @@ class Matrix:
 
         self.data = np.array(unpack(dataformat, data))
         self.scale_data()
+        self._processCurve()
         self._reshapeMapData()
+        self._getReferenceFileMap()
+        if self.refFile != None:
+            self._openRefFile()
 
     def _reshapeMapData(self):
         points = self.parameter['XYScanner.Points'][0]
@@ -84,6 +92,11 @@ class Matrix:
         ypoints = int(np.ceil(lines / subgridy))
         vpoints = self.parameter['Spectroscopy.Device_1_Points'][0]
         rampReversal = self.parameter['Spectroscopy.Enable_Device_1_Ramp_Reversal'][0]
+
+        width = self.parameter['XYScanner.Width'][0]
+        height = self.parameter['XYScanner.Height'][0]
+        self.x, self.y = np.meshgrid(np.linspace(0, width, xpoints), np.linspace(0, height, ypoints))
+
         if self.datatype == 'I(V)-map' and not rampReversal:
             expectedNumOfPoints = xpoints * ypoints * vpoints
             if self.data.size < expectedNumOfPoints:
@@ -152,6 +165,12 @@ class Matrix:
                 self.currentBack = self.data[:vpoints - 1:-1]
 
             self.V = np.linspace(vstart, vend, vpoints)
+
+    def _getReferenceFileMap(self):
+        for x in self.next_files:
+            if x[-6:] == 'Z_mtrx':
+                self.refFile = os.path.split(self.file)[0] + os.path.sep + x
+                return
 
     def _getReferenceFile(self):
         location = [x for x in self.parameter_marks if x[0:17] == 'MTRX$STS_LOCATION'][-1][18:]
@@ -313,8 +332,9 @@ class Matrix:
                 if datatag == 'ATEM':
                     blocksize = unpack('<i', f.read(4))[0]
                     f.read(4)  # timestamp
-                    f.read(blocksize)
                     f.read(4)
+                    f.read(blocksize)
+
 
                 elif datatag == 'DPXE':  # DPXE
                     blocksize = unpack('<i', f.read(4))[0]
@@ -467,8 +487,10 @@ class Matrix:
                     ferb = f.read(blocksize)
                     size = unpack('<i', ferb[4:8])[0]
                     self.parameter['BREF'] = ferb[8:8 + size * 2].decode('utf-16')
+                    self.prev_files.append(self.parameter['BREF'])
 
                 elif datatag == 'DOMP':
+                    f.tell()
                     blocksize = unpack('<i', f.read(4))[0]
                     f.read(4)  # date
                     f.read(4)
@@ -490,6 +512,7 @@ class Matrix:
                     data, offset = self.readData(domp, x)
                     name = groupname + "." + parameter
                     self.parameter[name] = [data, unit]
+                    f.tell()
 
                 elif datatag == 'KRAM':
                     blocksize = unpack('<i', f.read(4))[0]
@@ -498,6 +521,25 @@ class Matrix:
                     kram = f.read(blocksize)
                     size = unpack('<i', kram[0:4])[0]
                     self.parameter_marks.append(kram[4:4 + size * 2].decode('utf-16'))
+
+                try:
+                    datatag = f.read(4).decode()
+                except:
+                    datatag = ""
+
+            while len(datatag) == 4:
+                if datatag == 'FERB':
+                    blocksize = unpack('<i', f.read(4))[0]
+                    f.read(4)  # date
+                    f.read(4)
+                    ferb = f.read(blocksize)
+                    size = unpack('<i', ferb[4:8])[0]
+                    self.next_files.append(ferb[8:8 + size * 2].decode('utf-16'))
+
+                else:
+                    blocksize = unpack('<i', f.read(4))[0]
+                    f.seek(8, 1)
+                    f.seek(blocksize, 1)
 
                 try:
                     datatag = f.read(4).decode()
@@ -575,6 +617,7 @@ class Matrix:
 
 
 if __name__ == "__main__":
+
     # mtrx = Matrix("test_files/2021-04-08/Si(553)-AuSb--34_9.I(V)_mtrx")
     mtrx = Matrix("test_files/Si(553)_Au_krakerSb--3_1.I(V)_mtrx")
     # mtrx = Matrix("test_files/Si(111)-6x6 + 140Hz Au--4_1.Z_mtrx")

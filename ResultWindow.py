@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -55,8 +54,7 @@ class ResultWindow(QMainWindow):
 
     def __init__(self, data=None, parent=None, width=5, height=4, dpi=100, name=None):
         self.parent = parent
-        self.data = data
-        self.winState = self.States(data)
+
         if parent is not None:
             parent.results_windows.append(self)
 
@@ -72,12 +70,12 @@ class ResultWindow(QMainWindow):
         self.data = self.winState.nextState()
         self.draw()
 
-    def modifyData(self, method, param=None):
+    def modifyData(self, method, type='topo', param=None):
         self.winState.saveState(self.data)
         if param is None:
-            method()
+            method(self.data)
         else:
-            method(param)
+            method(self.data, param)
         self.draw()
 
     def draw(self):
@@ -105,7 +103,7 @@ class Profile:
     def draw_profile(self):
         self.first_point.draw_point()
         self.second_point.draw_point()
-        self.parent.canvasImg.axes.add_line(self.line)
+        self.parent.canvas_topo.axes.add_line(self.line)
 
 
 class Point:
@@ -119,22 +117,24 @@ class Point:
         self.point.set_picker(5)
 
     def draw_point(self):
-        self.parent.canvasImg.axes.add_patch(self.point)
+        self.parent.canvas_topo.axes.add_patch(self.point)
 
 
 class TopographyWindow(ResultWindow):
     def __init__(self, data=None, parent=None, width=4.1, height=4, dpi=100, name=None):
         super(TopographyWindow, self).__init__(data, parent, width, height, dpi, name)
+        self.data = data
+        self.winState = self.States(data)
 
         self.plotting_area = QtWidgets.QWidget(self)
         self.plotting_area_layout = QtWidgets.QHBoxLayout(self.plotting_area)
 
-        self.canvasImg = FigureCanvasImg(parent=self, width=width, height=height, dpi=dpi)
-        self.canvasColorbar = FigureCanvasColorbar(parent=self, width=width, height=height, dpi=dpi)
-        self.plotting_area_layout.addWidget(self.canvasImg)
-        self.plotting_area_layout.addWidget(self.canvasColorbar)
-        self.canvasColorbar.setMinimumWidth(100)
-        self.canvasColorbar.setMaximumWidth(100)
+        self.canvas_topo = FigureCanvasImg(parent=self, width=width, height=height, dpi=dpi)
+        self.canvas_colorbar_topo = FigureCanvasColorbar(parent=self, width=width, height=height, dpi=dpi)
+        self.plotting_area_layout.addWidget(self.canvas_topo)
+        self.plotting_area_layout.addWidget(self.canvas_colorbar_topo)
+        self.canvas_colorbar_topo.setMinimumWidth(100)
+        self.canvas_colorbar_topo.setMaximumWidth(100)
 
         self.setCentralWidget(self.plotting_area)
         xrange = self.data.get_x_range()
@@ -155,24 +155,26 @@ class TopographyWindow(ResultWindow):
         self.draw()
 
     def change_image(self, ax):
+        self.winState.saveState(self.data)
         self.data.change_ax(ax)
         self.active_ax = ax
         self.draw()
 
     def draw(self):
-        self.canvasImg.axes.cla()
-        self.canvasColorbar.axes.cla()
-        im = self.canvasImg.axes.pcolormesh(self.data.X, self.data.Y, self.data.Z, cmap='afmhot', picker=True)
-        self.canvasColorbar.fig.colorbar(im, cax=self.canvasColorbar.axes)
-        self.canvasColorbar.axes.set_title(self.data.unit)
-        self.canvasImg.axes.set_aspect('equal')
+        self.setWindowTitle(self.data.name)
+        self.canvas_topo.axes.cla()
+        self.canvas_colorbar_topo.axes.cla()
+        im = self.canvas_topo.axes.pcolormesh(self.data.X, self.data.Y, self.data.Z, cmap='afmhot', picker=True)
+        self.canvas_colorbar_topo.fig.colorbar(im, cax=self.canvas_colorbar_topo.axes)
+        self.canvas_colorbar_topo.axes.set_title(self.data.unit)
+        self.canvas_topo.axes.set_aspect('equal')
         if self.parent.interaction_mode == 'profile':
             self._draw_profile_lines()
         else:
             if self.scale_bar:
                 self._draw_scale_bar()
-        self.canvasImg.draw()
-        self.canvasColorbar.draw()
+        self.canvas_topo.draw()
+        self.canvas_colorbar_topo.draw()
 
     def _draw_profile_lines(self):
         if self.first_point != None:
@@ -184,12 +186,12 @@ class TopographyWindow(ResultWindow):
 
     def _draw_profile(self, profile):
         profile.draw_profile()
-        self.canvasImg.draw()
+        self.canvas_topo.draw()
         self.parent.profileWin.update_plot()
 
     def _draw_point(self, point):
         point.draw_point()
-        self.canvasImg.draw()
+        self.canvas_topo.draw()
 
     def _draw_scale_bar(self):
         shape = self.data.X.shape
@@ -202,17 +204,168 @@ class TopographyWindow(ResultWindow):
         y2 = self.data.Y[round(0.12 * shape[0]), 1]
         line = matplotlib.lines.Line2D([x1, x2],
                                        [y1, y2], linewidth=0.01 * shape[1],
-                                       color='black')
+                                       color='black', solid_capstyle='butt')
         text = matplotlib.text.Text(x=self.data.X[1, round(0.2 * shape[0])], y=self.data.Y[round(0.15 * shape[1]), 1],
                                     text=text,
                                     horizontalalignment='center', fontsize=13)
-        self.canvasImg.axes.add_line(line)
-        self.canvasImg.axes.add_artist(text)
+        self.canvas_topo.axes.add_line(line)
+        self.canvas_topo.axes.add_artist(text)
 
     def mouse_press(self, e, indices):
-        if e.inaxes != self.canvasImg.axes:
+        if e.inaxes != self.canvas_topo.axes:
             return
         if self.parent.interaction_mode == 'profile':
+            line = int(indices[0] / self.data.Z.shape[1])
+            point = int(indices[0] % (self.data.Z.shape[0]))
+            x = self.data.X[line, point]
+            y = self.data.Y[line, point]
+            if self.first_point == None:
+                self.first_point = Point(parent=self, x=x, y=y, x_index=point, y_index=line, size=self.point_size)
+                self._draw_point(self.first_point)
+            else:
+                second_point = Point(parent=self, x=x, y=y, x_index=point, y_index=line, size=self.point_size)
+                profile_line = Profile(parent=self, first_point=self.first_point, second_point=second_point)
+                self.profile_lines[self.active_ax].append(profile_line)
+                self.first_point = None
+                self._draw_profile(profile_line)
+
+    def mouse_press_right(self, e, artist=None):
+        if e.inaxes != self.canvas_topo.axes:
+            return
+        if artist == None:
+            if self.first_point != None:
+                self.first_point = None
+            else:
+                return
+        else:
+            for enum, profile in enumerate(self.profile_lines[self.active_ax]):
+                if profile.first_point.point == artist or profile.second_point.point == artist:
+                    self.profile_lines[self.active_ax].pop(enum)
+        self.draw()
+
+
+class SpectroscopyWindow(ResultWindow):
+    def __init__(self, data=None, parent=None, width=4.5, height=4, dpi=100, name=None):
+        super().__init__(None, parent, width, height, dpi, name)
+        self.data = data
+        self.winState = self.States(data)
+
+        self.forward = True
+        if self.data.ramp_reversal:
+            self.backward = True
+        else:
+            self.backward = False
+
+        self.canvas = FigureCanvas(self)
+        self._setup_ui()
+
+        self.show()
+        self.draw()
+
+    def _setup_ui(self):
+        self.central_widget = QtWidgets.QWidget(self)
+        self.layout_main = QtWidgets.QVBoxLayout(self.central_widget)
+        self.layout_main.addWidget(self.canvas)
+        self.layout_controls = QtWidgets.QVBoxLayout(self.central_widget)
+
+        self.setting_forward = QtWidgets.QCheckBox('Forward', self)
+        self.setting_forward.setChecked(self.forward)
+        self.setting_forward.toggled.connect(self._setting_forward_changed)
+        self.layout_controls.addWidget(self.setting_forward)
+
+        self.setting_backward = QtWidgets.QCheckBox('Backward', self)
+        self.setting_backward.setChecked(self.backward)
+        self.setting_backward.toggled.connect(self._setting_backward_changed)
+        self.layout_controls.addWidget(self.setting_backward)
+
+        self.layout_main.addLayout(self.layout_controls)
+        self.setCentralWidget(self.central_widget)
+
+    def _setting_forward_changed(self, value):
+        self.forward = self.setting_forward.isChecked()
+        self.draw()
+
+    def _setting_backward_changed(self, value):
+        self.backward = self.setting_backward.isChecked()
+        self.draw()
+
+    def draw(self):
+        self.canvas.axes.cla()
+        self.canvas.axes.grid(True)
+        if self.forward:
+            self.canvas.axes.plot(self.data.x, self.data.y_forward, color='blue')
+        if self.backward:
+            self.canvas.axes.plot(self.data.x, self.data.y_backward, color='red')
+        self.canvas.axes.set_xlabel(self.data.xunit)
+        self.canvas.axes.set_ylabel(self.data.unit)
+        self.canvas.fig.tight_layout(pad=0.1)
+        self.canvas.draw()
+
+
+class SpectroscopyMapWindow(ResultWindow):
+    def __init__(self, data, parent=None, width=4.5, height=4, dpi=100, name=None):
+        super().__init__(data, parent, width, height, dpi, name)
+        self.data = data
+        self.winState = self.States(data)
+
+        self.im = None
+        self.active_plane = 0
+
+        self._setup_ui()
+        self.show()
+        self.draw()
+
+    def _setup_ui(self):
+        self.central_widget = QtWidgets.QWidget(self)
+        self.layout_main = QtWidgets.QVBoxLayout(self.central_widget)
+
+        self.layout_results = QtWidgets.QHBoxLayout(self.central_widget)
+        self.canvas_map = FigureCanvasImg(self)
+        self.canvas_colorbar = FigureCanvasColorbar(self)
+        self.canvas_colorbar.setMinimumWidth(100)
+        self.canvas_colorbar.setMaximumWidth(100)
+        self.canvas_plot = FigureCanvas(self)
+        self.layout_results.addWidget(self.canvas_map)
+        self.layout_results.addWidget(self.canvas_colorbar)
+        self.layout_results.addWidget(self.canvas_plot)
+        self.layout_main.addLayout(self.layout_results)
+
+        self.layout_controls = QtWidgets.QHBoxLayout(self.central_widget)
+        self.setting_plane = QtWidgets.QSpinBox(self.central_widget)
+        self.setting_plane.setRange(0, len(self.data.planes)-1)
+        self.setting_plane.setValue(self.active_plane)
+        self.setting_plane.valueChanged.connect(self._active_plane_changed)
+        self.layout_controls.addWidget(self.setting_plane)
+        self.layout_main.addLayout(self.layout_controls)
+
+        self.setCentralWidget(self.central_widget)
+
+
+        # First time drawing image and colorbar. Then draw() only updates colorbar instead of redrawing it. Significant performace difference.
+        self.im = self.canvas_map.axes.pcolormesh(self.data.x, self.data.y, self.data.z_forward[:, :, self.active_plane],
+                                             cmap='afmhot', picker=True)
+        self.cb = self.canvas_colorbar.fig.colorbar(self.im, cax=self.canvas_colorbar.axes)
+        self.canvas_colorbar.axes.set_title(self.data.unit)
+
+    def _active_plane_changed(self, value):
+        self.active_plane = value
+        self.draw()
+
+    def draw(self):
+        self.canvas_map.axes.cla()
+        self.im = self.canvas_map.axes.pcolormesh(self.data.x, self.data.y, self.data.z_forward[:, :, self.active_plane], cmap='afmhot', picker=True)
+        self.cb.update_normal(self.im)
+        self.canvas_colorbar.axes.set_title(self.data.unit)
+        self.canvas_map.axes.set_aspect('equal')
+        self.canvas_map.draw()
+        self.canvas_colorbar.draw()
+
+
+
+    def mouse_press(self, e, indices):
+        if e.inaxes != self.canvas_map:
+            return
+        if self.parent.interaction_mode == 'curve_picking':
             line = int(indices / self.data.Z.shape[1])
             point = int(indices % (self.data.Z.shape[0]))
             x = self.data.X[line, point]
@@ -241,38 +394,214 @@ class TopographyWindow(ResultWindow):
                     self.profile_lines[self.active_ax].pop(enum)
         self.draw()
 
-    def mouse_release(self, e):
-        pass
 
-    def mouse_move(self, e):
-        pass
+class CombinedSpectroscopyMapWindow(ResultWindow):
+    def __init__(self, data, ref_data, parent=None, width=4.5, height=4, dpi=100, name=None):
+        super().__init__(data, parent, width, height, dpi, name)
+        self.data = [data, ref_data]
+        self.winState = self.States(data)
 
+        self.im1 = None
+        self.im2 = None
+        self.active_plane = 0
+        xrange = self.data[1].get_x_range()
+        self.point_size = 0.01 * xrange
+        self.scale_bar = True
+        self.first_point = None
+        self.profile_lines = [[] for i in range(4)]
 
-class SpectroscopyWindow(ResultWindow):
-    def __init__(self, data=None, parent=None, width=4.5, height=4, dpi=100, name=None):
-        super().__init__(None, parent, width, height, dpi, name)
-        self.data = data
-        self.canvas = FigureCanvas(self)
-        self.setCentralWidget(self.canvas)
+        self.active_ax = self.data[1].active_ax
+
+        # Setting window name
+        if name is None:
+            self.setWindowTitle(data.name)
+
+        self._setup_ui()
         self.show()
         self.draw()
 
+    def modifyData(self, method, type='topo', param=None):
+        self.winState.saveState(self.data)
+        if type == 'topo':
+            if param is None:
+                method(self.data[1])
+            else:
+                method(self.data[1], param)
+        if type == 'spectro':
+            if param is None:
+                method(self.data[0])
+            else:
+                method(self.data[0], param)
+        self.draw()
+
+    def _setup_ui(self):
+        self.central_widget = QtWidgets.QWidget(self)
+        self.layout_main = QtWidgets.QVBoxLayout(self.central_widget)
+
+        self.layout_results = QtWidgets.QHBoxLayout(self.central_widget)
+        self.canvas_topo = FigureCanvasImg(self)
+        self.canvas_colorbar_topo = FigureCanvasColorbar(self)
+        self.canvas_colorbar_topo.setMinimumWidth(100)
+        self.canvas_colorbar_topo.setMaximumWidth(100)
+        self.canvas_map = FigureCanvasImg(self)
+        self.canvas_colorbar = FigureCanvasColorbar(self)
+        self.canvas_colorbar.setMinimumWidth(100)
+        self.canvas_colorbar.setMaximumWidth(100)
+        self.canvas_plot = FigureCanvas(self)
+        self.layout_results.addWidget(self.canvas_topo)
+        self.layout_results.addWidget(self.canvas_colorbar_topo)
+        self.layout_results.addWidget(self.canvas_map)
+        self.layout_results.addWidget(self.canvas_colorbar)
+        self.layout_results.addWidget(self.canvas_plot)
+        self.layout_main.addLayout(self.layout_results)
+
+        self.layout_controls = QtWidgets.QHBoxLayout(self.central_widget)
+        self.setting_plane = QtWidgets.QSpinBox(self.central_widget)
+        self.setting_plane.setRange(0, len(self.data[0].planes)-1)
+        self.setting_plane.setValue(self.active_plane)
+        self.setting_plane.valueChanged.connect(self._active_plane_changed)
+        self.layout_controls.addWidget(self.setting_plane)
+        self.layout_main.addLayout(self.layout_controls)
+
+        self.setCentralWidget(self.central_widget)
+
+
+        # First time drawing image and colorbar. Then draw() only updates colorbar instead of redrawing it. Significant performace difference.
+        self.im1 = self.canvas_topo.axes.pcolormesh(self.data[1].X, self.data[1].Y,
+                                                   self.data[1].Z,
+                                                   cmap='afmhot', picker=True)
+        self.cb1 = self.canvas_colorbar_topo.fig.colorbar(self.im1, cax=self.canvas_colorbar_topo.axes)
+        self.canvas_colorbar_topo.axes.set_title(self.data[1].unit)
+        self.im2 = self.canvas_map.axes.pcolormesh(self.data[0].x, self.data[0].y, self.data[0].z_forward[:, :, self.active_plane],
+                                             cmap='afmhot', picker=True)
+        self.cb2 = self.canvas_colorbar.fig.colorbar(self.im2, cax=self.canvas_colorbar.axes)
+        self.canvas_colorbar.axes.set_title(self.data[0].unit)
+
+    def _active_plane_changed(self, value):
+        self.active_plane = value
+        self.redraw()
+
+    def change_image(self, ax):
+        self.winState.saveState(self.data)
+        self.data[1].change_ax(ax)
+        self.active_ax = ax
+        self.draw()
+
+    def _draw_profile_lines(self):
+        if self.first_point != None:
+            self.first_point.draw_point()
+        if self.profile_lines[self.active_ax] != []:
+            for x in self.profile_lines[self.active_ax]:
+                x.draw_profile()
+        self.parent.profileWin.update_plot()
+
+    def _draw_profile(self, profile):
+        profile.draw_profile()
+        self.canvas_topo.draw()
+        self.parent.profileWin.update_plot()
+
+    def _draw_point(self, point):
+        point.draw_point()
+        self.canvas_topo.draw()
+
+    def redraw(self):
+        self.canvas_map.axes.cla()
+        self.im2 = self.canvas_map.axes.pcolormesh(self.data[0].x, self.data[0].y, self.data[0].z_forward[:, :, self.active_plane], cmap='afmhot', picker=True)
+        self.cb2.update_normal(self.im2)
+        self.canvas_colorbar.axes.set_title(self.data[0].unit)
+        self.canvas_map.axes.set_aspect('equal')
+        if self.parent.interaction_mode == 'profile':
+            self._draw_profile_lines()
+        self.canvas_map.draw()
+        self.canvas_colorbar.draw()
+
     def draw(self):
-        self.canvas.axes.cla()
-        self.canvas.axes.plot(self.data.V, self.data.current_forward)
-        self.canvas.axes.set_xlabel(self.data.xunit)
-        self.canvas.axes.set_ylabel(self.data.unit)
-        self.canvas.draw()
+        self.canvas_map.axes.cla()
+        self.canvas_topo.axes.cla()
+        self.im1 = self.canvas_topo.axes.pcolormesh(self.data[1].X, self.data[1].Y,
+                                                   self.data[1].Z, cmap='afmhot',
+                                                   picker=True)
+        self.im2 = self.canvas_map.axes.pcolormesh(self.data[0].x, self.data[0].y, self.data[0].z_forward[:, :, self.active_plane], cmap='afmhot', picker=True)
+        self.cb1.update_normal(self.im1)
+        self.cb2.update_normal(self.im2)
+        self.canvas_colorbar.axes.set_title(self.data[0].unit)
+        self.canvas_colorbar_topo.axes.set_title(self.data[1].unit)
+        self.canvas_map.axes.set_aspect('equal')
+        self.canvas_topo.axes.set_aspect('equal')
+        if self.parent.interaction_mode == 'profile':
+            self._draw_profile_lines()
+        self.canvas_map.draw()
+        self.canvas_topo.draw()
+        self.canvas_colorbar.draw()
+        self.canvas_colorbar_topo.draw()
+
+    def mouse_press(self, e, indices):
+        if e.inaxes != self.canvas_topo.axes:
+            return
+        if self.parent.interaction_mode == 'profile':
+            line = int(indices / self.data[1].Z.shape[1])
+            point = int(indices % (self.data[1].Z.shape[0]))
+            x = self.data[1].X[line, point]
+            y = self.data[1].Y[line, point]
+            if self.first_point == None:
+                self.first_point = Point(parent=self, x=x, y=y, x_index=point, y_index=line, size=self.point_size)
+                self._draw_point(self.first_point)
+            else:
+                second_point = Point(parent=self, x=x, y=y, x_index=point, y_index=line, size=self.point_size)
+                profile_line = Profile(parent=self, first_point=self.first_point, second_point=second_point)
+                self.profile_lines[self.active_ax].append(profile_line)
+                self.first_point = None
+                self._draw_profile(profile_line)
+
+    def mouse_press_right(self, e, artist=None):
+        if e.inaxes != self.canvas_topo.axes:
+            return
+        if artist == None:
+            if self.first_point != None:
+                self.first_point = None
+            else:
+                return
+        else:
+            for enum, profile in enumerate(self.profile_lines[self.active_ax]):
+                if profile.first_point.point == artist or profile.second_point.point == artist:
+                    self.profile_lines[self.active_ax].pop(enum)
+        self.draw()
+
+class SingleCurve:
+    def __init__(self, parent, x=0, y=0, x_index=None, y_index=None, size=1):
+        self.parent = parent
+        self.x_index = x_index
+        self.y_index = y_index
+        self.x = x
+        self.y = y
+        self.point = matplotlib.patches.Ellipse((x, y), size, size, fc='r', alpha=0.5, edgecolor='r')
+        self.point.set_picker(5)
+
+    def draw_point(self):
+        self.parent.canvas_topo.axes.add_patch(self.point)
 
 
+class AreaCurves:
+    def __init__(self, parent, x=0, y=0, x_index=None, y_index=None, size=1):
+        self.parent = parent
+        self.x_index = x_index
+        self.y_index = y_index
+        self.x = x
+        self.y = y
+        self.point = matplotlib.patches.Ellipse((x, y), size, size, fc='r', alpha=0.5, edgecolor='r')
+        self.point.set_picker(5)
 
+    def draw_point(self):
+        self.parent.canvas_topo.axes.add_patch(self.point)
 
 class ProfileResultWindow(ResultWindow):
     def __init__(self, profile=None, parent=None, width=4.5, height=4, dpi=100, name=None):
         super().__init__(None, parent, width, height, dpi, name)
+
         self.canvas = FigureCanvas(self)
         self.setCentralWidget(self.canvas)
-        self.profile = profile
+        self.data = profile
+        self.winState = self.States(self.data)
         if name is not None:
             self.setWindowTitle(name)
         else:
@@ -286,7 +615,7 @@ class ProfileResultWindow(ResultWindow):
     def draw(self):
 
         self.canvas.axes.cla()
-        for enum, prof in enumerate(self.profile):
+        for enum, prof in enumerate(self.data):
             self.canvas.axes.plot(prof.distance, prof.profile)
 
         self.canvas.axes.set_xlabel(self.xunit)
@@ -295,11 +624,11 @@ class ProfileResultWindow(ResultWindow):
 
     # Looking for profiles with maximum ranges to set units in output graph
     def get_unit(self):
-        max_xrange = self.profile[0].get_xrange()
+        max_xrange = self.data[0].get_xrange()
         max_xrange_index = 0
-        max_range = self.profile[0].get_range()
+        max_range = self.data[0].get_range()
         max_range_index = 0
-        for enum, prof in enumerate(self.profile):
+        for enum, prof in enumerate(self.data):
             if prof.get_xrange() > max_xrange:
                 max_xrange_index = enum
                 max_xrange = prof.get_xrange()
@@ -307,19 +636,19 @@ class ProfileResultWindow(ResultWindow):
                 max_range_index = enum
                 max_range = prof.get_range()
         # Set automatic units on profiles with largest ranges
-        self.profile[max_xrange_index].auto_units()
-        self.profile[max_range_index].auto_units()
+        self.data[max_xrange_index].auto_units()
+        self.data[max_range_index].auto_units()
         # Set x-axis and y-axis units
-        xunit = self.profile[max_xrange_index].xunit
-        unit = self.profile[max_range_index].unit
+        xunit = self.data[max_xrange_index].xunit
+        unit = self.data[max_range_index].unit
         return unit, xunit
 
     def auto_profile_units(self):
-        for prof in self.profile:
+        for prof in self.data:
             prof.auto_units()
 
     def set_profile_units(self):
-        for prof in self.profile:
+        for prof in self.data:
             prof.set_profile_units(self.xunit, self.unit)
 
 
@@ -406,7 +735,7 @@ class FigureCanvasImg(FigureCanvasQTAgg):
         self.artist = None
 
     def on_move(self, e):
-        self.parent.mouse_move(e)
+        pass
 
     def on_pick(self, e):
         if isinstance(e.artist, matplotlib.patches.Ellipse):

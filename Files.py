@@ -6,7 +6,8 @@ Created on Thu Jan 26 21:36:07 2023
 """
 
 import matrixFileHandling as mfh
-import Topography, Spectroscopy
+import Topography
+import Spectroscopy
 
 import numpy as np
 
@@ -14,11 +15,17 @@ import numpy as np
 def NewFile(file):
     mtrx = mfh.Matrix(file)
     datatype = mtrx.datatype
+    result_ref = None
     if datatype == 'Z' or datatype == 'I':
         result = Topography.Topography(filetype='mtrx', data=mtrx)
     if datatype == 'I(V)-curve':
         result = Spectroscopy.Spectroscopy(data=mtrx)
-    return result, datatype
+    if datatype == 'I(V)-map':
+        result = Spectroscopy.SpectroscopyMap(data=mtrx)
+        if mtrx.mtrxRef:
+            result_ref = Topography.Topography(filetype='mtrx', data=mtrx.mtrxRef)
+
+    return result, datatype, result_ref
 
 
 def NewFileXYZ(filename, shape, unit):

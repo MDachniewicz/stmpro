@@ -12,7 +12,8 @@ from PyQt5.QtWidgets import (QMainWindow, QMenu,
                              QAction, QFileDialog, QActionGroup)
 
 import Files
-from ResultWindow import ResultWindow, SpectroscopyWindow, TopographyWindow
+from Topography import Topography
+from ResultWindow import ResultWindow, SpectroscopyWindow, SpectroscopyMapWindow, CombinedSpectroscopyMapWindow, TopographyWindow
 from FilterWindow import FilterWindow
 from ProfileWindow import ProfileWindow
 from HistogramWindow import HistogramWindow
@@ -428,7 +429,7 @@ class MainWindow(QMainWindow):
         else:
             active_window = self.results_windows[self.active_result_window]
             self.export_button.setDisabled(False)
-            if isinstance(active_window, TopographyWindow):
+            if isinstance(active_window, (TopographyWindow, CombinedSpectroscopyMapWindow)):
                 self.level_linewise_button.setDisabled(False)
                 self.level_plane_button.setDisabled(False)
                 self.set_zero_button.setDisabled(False)
@@ -496,7 +497,7 @@ class MainWindow(QMainWindow):
             if isinstance(active_window, ResultWindow):
                 self.save_png_action.setDisabled(False)
                 self.export_action.setDisabled(False)
-            if isinstance(active_window, TopographyWindow):
+            if isinstance(active_window, (TopographyWindow, CombinedSpectroscopyMapWindow)):
                 self.scale_action.setDisabled(False)
                 self.rotate_clockwise_action.setDisabled(False)
                 self.rotate_anticlockwise_action.setDisabled(False)
@@ -510,10 +511,17 @@ class MainWindow(QMainWindow):
                 self.histAction.setDisabled(False)
                 self.fft_action.setDisabled(False)
                 self.saveXYZAction.setDisabled(False)
-                self.change_image_group.actions()[active_window.data.active_ax].setChecked(True)
-                for button, av in zip(self.change_image_group.actions(), active_window.data.available_axes):
-                    if av:
-                        button.setDisabled(False)
+                if isinstance(active_window, TopographyWindow):
+                    self.change_image_group.actions()[active_window.data.active_ax].setChecked(True)
+                    for button, av in zip(self.change_image_group.actions(), active_window.data.available_axes):
+                        if av:
+                            button.setDisabled(False)
+                else:
+                    self.change_image_group.actions()[active_window.data[1].active_ax].setChecked(True)
+                    for button, av in zip(self.change_image_group.actions(), active_window.data[1].available_axes):
+                        if av:
+                            button.setDisabled(False)
+
             if isinstance(active_window, SpectroscopyWindow):
                 self.scale_action.setDisabled(True)
                 self.rotate_clockwise_action.setDisabled(True)
@@ -552,13 +560,12 @@ class MainWindow(QMainWindow):
             self.fft_win.clear_plot()
             self.scale_win.disable()
 
-
         else:
             active_window = self.results_windows[self.active_result_window]
             if isinstance(active_window, ResultWindow):
                 self.scale_win.enable()
                 self.scale_win.update()
-            if isinstance(active_window, TopographyWindow):
+            if isinstance(active_window, (TopographyWindow, CombinedSpectroscopyMapWindow)):
                 self.filterWin.enable()
                 self.profileWin.enable()
                 if self.profile_win_active:
@@ -580,11 +587,16 @@ class MainWindow(QMainWindow):
                 self.fft_win.clear_plot()
                 self.scale_win.disable()
 
-    def openResultWindow(self, data, filetype):
+    def openResultWindow(self, data, filetype, ref_data=None):
         if filetype == 'Z' or filetype == 'I':
             win = TopographyWindow(data=data, parent=self)
         if filetype == 'I(V)-curve':
             win = SpectroscopyWindow(data=data, parent=self)
+        if filetype == 'I(V)-map':
+            if ref_data:
+                win = CombinedSpectroscopyMapWindow(data=data, ref_data=ref_data, parent=self)
+            else:
+                win = SpectroscopyMapWindow(data=data, parent=self)
         win.show()
 
     def openFile(self):
@@ -595,8 +607,8 @@ class MainWindow(QMainWindow):
                                                 options=options)
         for file in files:
             try:
-                data, filetype = Files.NewFile(file)
-                self.openResultWindow(data, filetype)
+                data, filetype, ref_data = Files.NewFile(file)
+                self.openResultWindow(data, filetype, ref_data)
             except FileNotFoundError as e:
                 if e.args[0] == "NoHeader":
                     QtWidgets.QMessageBox.question(self,
@@ -696,7 +708,7 @@ class MainWindow(QMainWindow):
     def rotate_clockwise(self):
         if self.results_windows != []:
             result = self.results_windows[self.active_result_window]
-            result.modifyData(result.data.rotate90, 1)
+            result.modifyData(Topography.rotate90, param=1)
             self._update_menu()
             self._update_push_buttons()
             self.update_windows()
@@ -704,7 +716,7 @@ class MainWindow(QMainWindow):
     def rotate_anticlockwise(self):
         if self.results_windows != []:
             result = self.results_windows[self.active_result_window]
-            result.modifyData(result.data.rotate90, -1)
+            result.modifyData(Topography.rotate90, param=-1)
             self._update_menu()
             self._update_push_buttons()
             self.update_windows()
@@ -712,7 +724,7 @@ class MainWindow(QMainWindow):
     def mirror_ud(self):
         if self.results_windows != []:
             result = self.results_windows[self.active_result_window]
-            result.modifyData(result.data.mirror_ud)
+            result.modifyData(Topography.mirror_ud)
             self._update_menu()
             self._update_push_buttons()
             self.update_windows()
@@ -720,7 +732,7 @@ class MainWindow(QMainWindow):
     def mirror_lr(self):
         if self.results_windows != []:
             result = self.results_windows[self.active_result_window]
-            result.modifyData(result.data.mirror_lr)
+            result.modifyData(Topography.mirror_lr)
             self._update_menu()
             self._update_push_buttons()
             self.update_windows()
@@ -728,7 +740,7 @@ class MainWindow(QMainWindow):
     def levelEdit(self):
         if self.results_windows != []:
             result = self.results_windows[self.active_result_window]
-            result.modifyData(result.data.level_linewise)
+            result.modifyData(Topography.level_linewise)
             self._update_menu()
             self._update_push_buttons()
             self.update_windows()
@@ -736,14 +748,14 @@ class MainWindow(QMainWindow):
     def level_planeEdit(self):
         if self.results_windows != []:
             result = self.results_windows[self.active_result_window]
-            result.modifyData(result.data.level_plane)
+            result.modifyData(Topography.level_plane)
             self._update_menu()
             self._update_push_buttons()
             self.update_windows()
 
     def setZeroLevelEdit(self):
         result = self.results_windows[self.active_result_window]
-        result.modifyData(result.data.set_zero_level)
+        result.modifyData(Topography.set_zero_level)
         self._update_menu()
         self._update_push_buttons()
         self.update_windows()
