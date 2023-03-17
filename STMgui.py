@@ -430,7 +430,7 @@ class MainWindow(QMainWindow):
         else:
             active_window = self.results_windows[self.active_result_window]
             self.export_button.setDisabled(False)
-            if isinstance(active_window, TopographyWindow):
+            if isinstance(active_window, (TopographyWindow, CombinedSpectroscopyMapWindow)):
                 self.level_linewise_button.setDisabled(False)
                 self.level_plane_button.setDisabled(False)
                 self.set_zero_button.setDisabled(False)
@@ -498,7 +498,7 @@ class MainWindow(QMainWindow):
             if isinstance(active_window, ResultWindow):
                 self.save_png_action.setDisabled(False)
                 self.export_action.setDisabled(False)
-            if isinstance(active_window, TopographyWindow):
+            if isinstance(active_window, (TopographyWindow, CombinedSpectroscopyMapWindow)):
                 self.scale_action.setDisabled(False)
                 self.rotate_clockwise_action.setDisabled(False)
                 self.rotate_anticlockwise_action.setDisabled(False)
@@ -512,10 +512,17 @@ class MainWindow(QMainWindow):
                 self.histAction.setDisabled(False)
                 self.fft_action.setDisabled(False)
                 self.saveXYZAction.setDisabled(False)
-                self.change_image_group.actions()[active_window.data.active_ax].setChecked(True)
-                for button, av in zip(self.change_image_group.actions(), active_window.data.available_axes):
-                    if av:
-                        button.setDisabled(False)
+                if isinstance(active_window, TopographyWindow):
+                    self.change_image_group.actions()[active_window.data.active_ax].setChecked(True)
+                    for button, av in zip(self.change_image_group.actions(), active_window.data.available_axes):
+                        if av:
+                            button.setDisabled(False)
+                else:
+                    self.change_image_group.actions()[active_window.data[1].active_ax].setChecked(True)
+                    for button, av in zip(self.change_image_group.actions(), active_window.data[1].available_axes):
+                        if av:
+                            button.setDisabled(False)
+
             if isinstance(active_window, SpectroscopyWindow):
                 self.scale_action.setDisabled(True)
                 self.rotate_clockwise_action.setDisabled(True)
@@ -554,13 +561,12 @@ class MainWindow(QMainWindow):
             self.fft_win.clear_plot()
             self.scale_win.disable()
 
-
         else:
             active_window = self.results_windows[self.active_result_window]
             if isinstance(active_window, ResultWindow):
                 self.scale_win.enable()
                 self.scale_win.update()
-            if isinstance(active_window, TopographyWindow):
+            if isinstance(active_window, (TopographyWindow, CombinedSpectroscopyMapWindow)):
                 self.filterWin.enable()
                 self.profileWin.enable()
                 if self.profile_win_active:

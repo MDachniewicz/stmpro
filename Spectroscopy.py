@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Feb 11 22:38:06 2023
-
-@author: marek
-"""
 import numpy as np
 from STMData import STMData
 
@@ -13,6 +7,7 @@ class Spectroscopy(STMData):
         self.parameters = data.parameter
         self.x = data.V
         self.filename = data.file
+        self.name = f'Spectroscopy: {self.filename}'
         self.xunit = 'V'
         self.unit = 'A'
         self.y_forward = None
@@ -26,6 +21,7 @@ class Spectroscopy(STMData):
             self.y_backward, self.unit = self.update_unit(self.y_backward, 'A')
 
         self.x, self.xunit = self.update_unit(self.x, self.xunit)
+
 
     def get_x_range(self):
         return np.amax(self.x) - np.amin(self.x)
@@ -53,6 +49,7 @@ class SpectroscopyMap(Spectroscopy):
         self.parameters = data.parameter
         self.planes = data.V
         self.filename = data.file
+        self.name = f'Spectroscopy Map: {self.filename}'
         self.plane_unit = 'V'
         self.xunit = 'm'
         self.yunit = 'm'

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -104,7 +103,7 @@ class Profile:
     def draw_profile(self):
         self.first_point.draw_point()
         self.second_point.draw_point()
-        self.parent.canvasImg.axes.add_line(self.line)
+        self.parent.canvas_topo.axes.add_line(self.line)
 
 
 class Point:
@@ -118,7 +117,7 @@ class Point:
         self.point.set_picker(5)
 
     def draw_point(self):
-        self.parent.canvasImg.axes.add_patch(self.point)
+        self.parent.canvas_topo.axes.add_patch(self.point)
 
 
 class TopographyWindow(ResultWindow):
@@ -130,12 +129,12 @@ class TopographyWindow(ResultWindow):
         self.plotting_area = QtWidgets.QWidget(self)
         self.plotting_area_layout = QtWidgets.QHBoxLayout(self.plotting_area)
 
-        self.canvasImg = FigureCanvasImg(parent=self, width=width, height=height, dpi=dpi)
-        self.canvasColorbar = FigureCanvasColorbar(parent=self, width=width, height=height, dpi=dpi)
-        self.plotting_area_layout.addWidget(self.canvasImg)
-        self.plotting_area_layout.addWidget(self.canvasColorbar)
-        self.canvasColorbar.setMinimumWidth(100)
-        self.canvasColorbar.setMaximumWidth(100)
+        self.canvas_topo = FigureCanvasImg(parent=self, width=width, height=height, dpi=dpi)
+        self.canvas_colorbar_topo = FigureCanvasColorbar(parent=self, width=width, height=height, dpi=dpi)
+        self.plotting_area_layout.addWidget(self.canvas_topo)
+        self.plotting_area_layout.addWidget(self.canvas_colorbar_topo)
+        self.canvas_colorbar_topo.setMinimumWidth(100)
+        self.canvas_colorbar_topo.setMaximumWidth(100)
 
         self.setCentralWidget(self.plotting_area)
         xrange = self.data.get_x_range()
@@ -163,19 +162,19 @@ class TopographyWindow(ResultWindow):
 
     def draw(self):
         self.setWindowTitle(self.data.name)
-        self.canvasImg.axes.cla()
-        self.canvasColorbar.axes.cla()
-        im = self.canvasImg.axes.pcolormesh(self.data.X, self.data.Y, self.data.Z, cmap='afmhot', picker=True)
-        self.canvasColorbar.fig.colorbar(im, cax=self.canvasColorbar.axes)
-        self.canvasColorbar.axes.set_title(self.data.unit)
-        self.canvasImg.axes.set_aspect('equal')
+        self.canvas_topo.axes.cla()
+        self.canvas_colorbar_topo.axes.cla()
+        im = self.canvas_topo.axes.pcolormesh(self.data.X, self.data.Y, self.data.Z, cmap='afmhot', picker=True)
+        self.canvas_colorbar_topo.fig.colorbar(im, cax=self.canvas_colorbar_topo.axes)
+        self.canvas_colorbar_topo.axes.set_title(self.data.unit)
+        self.canvas_topo.axes.set_aspect('equal')
         if self.parent.interaction_mode == 'profile':
             self._draw_profile_lines()
         else:
             if self.scale_bar:
                 self._draw_scale_bar()
-        self.canvasImg.draw()
-        self.canvasColorbar.draw()
+        self.canvas_topo.draw()
+        self.canvas_colorbar_topo.draw()
 
     def _draw_profile_lines(self):
         if self.first_point != None:
@@ -187,12 +186,12 @@ class TopographyWindow(ResultWindow):
 
     def _draw_profile(self, profile):
         profile.draw_profile()
-        self.canvasImg.draw()
+        self.canvas_topo.draw()
         self.parent.profileWin.update_plot()
 
     def _draw_point(self, point):
         point.draw_point()
-        self.canvasImg.draw()
+        self.canvas_topo.draw()
 
     def _draw_scale_bar(self):
         shape = self.data.X.shape
@@ -209,15 +208,15 @@ class TopographyWindow(ResultWindow):
         text = matplotlib.text.Text(x=self.data.X[1, round(0.2 * shape[0])], y=self.data.Y[round(0.15 * shape[1]), 1],
                                     text=text,
                                     horizontalalignment='center', fontsize=13)
-        self.canvasImg.axes.add_line(line)
-        self.canvasImg.axes.add_artist(text)
+        self.canvas_topo.axes.add_line(line)
+        self.canvas_topo.axes.add_artist(text)
 
     def mouse_press(self, e, indices):
-        if e.inaxes != self.canvasImg.axes:
+        if e.inaxes != self.canvas_topo.axes:
             return
         if self.parent.interaction_mode == 'profile':
-            line = int(indices / self.data.Z.shape[1])
-            point = int(indices % (self.data.Z.shape[0]))
+            line = int(indices[0] / self.data.Z.shape[1])
+            point = int(indices[0] % (self.data.Z.shape[0]))
             x = self.data.X[line, point]
             y = self.data.Y[line, point]
             if self.first_point == None:
@@ -231,7 +230,7 @@ class TopographyWindow(ResultWindow):
                 self._draw_profile(profile_line)
 
     def mouse_press_right(self, e, artist=None):
-        if e.inaxes != self.canvasImg.axes:
+        if e.inaxes != self.canvas_topo.axes:
             return
         if artist == None:
             if self.first_point != None:
@@ -305,7 +304,7 @@ class SpectroscopyWindow(ResultWindow):
 
 class SpectroscopyMapWindow(ResultWindow):
     def __init__(self, data, parent=None, width=4.5, height=4, dpi=100, name=None):
-        super(SpectroscopyMapWindow, self).__init__(data, parent, width, height, dpi, name)
+        super().__init__(data, parent, width, height, dpi, name)
         self.data = data
         self.winState = self.States(data)
 
@@ -398,13 +397,24 @@ class SpectroscopyMapWindow(ResultWindow):
 
 class CombinedSpectroscopyMapWindow(ResultWindow):
     def __init__(self, data, ref_data, parent=None, width=4.5, height=4, dpi=100, name=None):
-        super(CombinedSpectroscopyMapWindow, self).__init__(data, parent, width, height, dpi, name)
+        super().__init__(data, parent, width, height, dpi, name)
         self.data = [data, ref_data]
         self.winState = self.States(data)
 
         self.im1 = None
         self.im2 = None
         self.active_plane = 0
+        xrange = self.data[1].get_x_range()
+        self.point_size = 0.01 * xrange
+        self.scale_bar = True
+        self.first_point = None
+        self.profile_lines = [[] for i in range(4)]
+
+        self.active_ax = self.data[1].active_ax
+
+        # Setting window name
+        if name is None:
+            self.setWindowTitle(data.name)
 
         self._setup_ui()
         self.show()
@@ -471,12 +481,37 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         self.active_plane = value
         self.redraw()
 
+    def change_image(self, ax):
+        self.winState.saveState(self.data)
+        self.data[1].change_ax(ax)
+        self.active_ax = ax
+        self.draw()
+
+    def _draw_profile_lines(self):
+        if self.first_point != None:
+            self.first_point.draw_point()
+        if self.profile_lines[self.active_ax] != []:
+            for x in self.profile_lines[self.active_ax]:
+                x.draw_profile()
+        self.parent.profileWin.update_plot()
+
+    def _draw_profile(self, profile):
+        profile.draw_profile()
+        self.canvas_topo.draw()
+        self.parent.profileWin.update_plot()
+
+    def _draw_point(self, point):
+        point.draw_point()
+        self.canvas_topo.draw()
+
     def redraw(self):
         self.canvas_map.axes.cla()
         self.im2 = self.canvas_map.axes.pcolormesh(self.data[0].x, self.data[0].y, self.data[0].z_forward[:, :, self.active_plane], cmap='afmhot', picker=True)
         self.cb2.update_normal(self.im2)
         self.canvas_colorbar.axes.set_title(self.data[0].unit)
         self.canvas_map.axes.set_aspect('equal')
+        if self.parent.interaction_mode == 'profile':
+            self._draw_profile_lines()
         self.canvas_map.draw()
         self.canvas_colorbar.draw()
 
@@ -493,11 +528,44 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         self.canvas_colorbar_topo.axes.set_title(self.data[1].unit)
         self.canvas_map.axes.set_aspect('equal')
         self.canvas_topo.axes.set_aspect('equal')
+        if self.parent.interaction_mode == 'profile':
+            self._draw_profile_lines()
         self.canvas_map.draw()
         self.canvas_topo.draw()
         self.canvas_colorbar.draw()
         self.canvas_colorbar_topo.draw()
 
+    def mouse_press(self, e, indices):
+        if e.inaxes != self.canvas_topo.axes:
+            return
+        if self.parent.interaction_mode == 'profile':
+            line = int(indices / self.data[1].Z.shape[1])
+            point = int(indices % (self.data[1].Z.shape[0]))
+            x = self.data[1].X[line, point]
+            y = self.data[1].Y[line, point]
+            if self.first_point == None:
+                self.first_point = Point(parent=self, x=x, y=y, x_index=point, y_index=line, size=self.point_size)
+                self._draw_point(self.first_point)
+            else:
+                second_point = Point(parent=self, x=x, y=y, x_index=point, y_index=line, size=self.point_size)
+                profile_line = Profile(parent=self, first_point=self.first_point, second_point=second_point)
+                self.profile_lines[self.active_ax].append(profile_line)
+                self.first_point = None
+                self._draw_profile(profile_line)
+
+    def mouse_press_right(self, e, artist=None):
+        if e.inaxes != self.canvas_topo.axes:
+            return
+        if artist == None:
+            if self.first_point != None:
+                self.first_point = None
+            else:
+                return
+        else:
+            for enum, profile in enumerate(self.profile_lines[self.active_ax]):
+                if profile.first_point.point == artist or profile.second_point.point == artist:
+                    self.profile_lines[self.active_ax].pop(enum)
+        self.draw()
 
 class SingleCurve:
     def __init__(self, parent, x=0, y=0, x_index=None, y_index=None, size=1):
@@ -510,7 +578,7 @@ class SingleCurve:
         self.point.set_picker(5)
 
     def draw_point(self):
-        self.parent.canvasImg.axes.add_patch(self.point)
+        self.parent.canvas_topo.axes.add_patch(self.point)
 
 
 class AreaCurves:
@@ -524,7 +592,7 @@ class AreaCurves:
         self.point.set_picker(5)
 
     def draw_point(self):
-        self.parent.canvasImg.axes.add_patch(self.point)
+        self.parent.canvas_topo.axes.add_patch(self.point)
 
 class ProfileResultWindow(ResultWindow):
     def __init__(self, profile=None, parent=None, width=4.5, height=4, dpi=100, name=None):

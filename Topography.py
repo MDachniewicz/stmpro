@@ -19,7 +19,7 @@ class Topography(STMData):
     AXES = ['Forward-Up', 'Backward-Up', 'Forward-Down', 'Backward-Down']
 
     def __init__(self, filetype, data, unit='m', ax=0):
-        self.name = None
+        super().__init__()
         self.available_axes = []
         self.active_ax = ax
         self.z_data = []

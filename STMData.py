@@ -6,15 +6,15 @@ import numpy as np
 class STMData:
     UNITS = {'Z': 'm', 'I': 'A', 'V': 'V'}
     UNITS_PREFIXES = {'': 1, 'm': 10 ** 3, 'μ': 10 ** 6, 'n': 10 ** 9, 'Å': 10 ** 10, 'p': 10 ** 12}
-    filename = None
-    parameters = {}
-    comment = {}
-    filetype = None
-    unit = None
-    xunit = None
 
     def __init__(self):
-        pass
+        self.name = None
+        self.filename = None
+        self.parameters = {}
+        self.comment = {}
+        self.filetype = None
+        self.unit = None
+        self.xunit = None
 
     def __repr__(self):
         if self.filetype == 'Z':

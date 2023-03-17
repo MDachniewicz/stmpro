@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jun 29 13:40:07 2022
-
-@author: marek
-"""
-
 import sys
 from PyQt5.QtWidgets import QApplication
 import STMgui

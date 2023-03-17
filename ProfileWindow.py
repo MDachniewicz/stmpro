@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QDialog, QSlider, QLabel, QWidget, QMainWindow
 from PyQt5 import QtCore, QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-from ResultWindow import ProfileResultWindow
+import ResultWindow
 from Topography import ProfileData
 
 class ProfileWindow(QDialog):
@@ -44,10 +44,17 @@ class ProfileWindow(QDialog):
                 x2 = profile.second_point.x_index
                 y1 = profile.first_point.y_index
                 y2 = profile.second_point.y_index
-                distance, profile = active_window.data.get_profile((x1,y1), (x2, y2), self.profile_width)
+                if isinstance(active_window, ResultWindow.TopographyWindow):
+                    distance, profile = active_window.data.get_profile((x1,y1), (x2, y2), self.profile_width)
+                else:
+                    distance, profile = active_window.data[1].get_profile((x1, y1), (x2, y2), self.profile_width)
                 self.canvas.axes.plot(distance, profile)
-            self.canvas.axes.set_ylabel(active_window.data.unit)
-            self.canvas.axes.set_xlabel(active_window.data.xunit)
+            if isinstance(active_window, ResultWindow.TopographyWindow):
+                self.canvas.axes.set_ylabel(active_window.data.unit)
+                self.canvas.axes.set_xlabel(active_window.data.xunit)
+            else:
+                self.canvas.axes.set_ylabel(active_window.data[1].unit)
+                self.canvas.axes.set_xlabel(active_window.data[1].xunit)
             self.canvas.draw()
 
     def clear_plot(self):
@@ -112,7 +119,10 @@ class ProfileWindow(QDialog):
 
     def apply(self):
         active_window = self.parent.results_windows[self.parent.active_result_window]
-        unit, xunit, _ = active_window.data.get_units()
+        if isinstance(active_window, ResultWindow.TopographyWindow):
+            unit, xunit, _ = active_window.data.get_units()
+        else:
+            unit, xunit, _ = active_window.data[1].get_units()
         active_ax = active_window.active_ax
         if self.separate_profiles:
             for enum, profile in enumerate(active_window.profile_lines[active_ax]):
@@ -120,10 +130,13 @@ class ProfileWindow(QDialog):
                 x2 = profile.second_point.x_index
                 y1 = profile.first_point.y_index
                 y2 = profile.second_point.y_index
-                distance, profile = active_window.data.get_profile((x1, y1), (x2, y2), self.profile_width)
+                if isinstance(active_window, ResultWindow.TopographyWindow):
+                    distance, profile = active_window.data.get_profile((x1, y1), (x2, y2), self.profile_width)
+                else:
+                    distance, profile = active_window.data[1].get_profile((x1, y1), (x2, y2), self.profile_width)
                 name = 'Profile' + str(enum)
                 profile = [ProfileData(distance, profile, unit=unit, xunit=xunit, name=name)]
-                ProfileResultWindow(profile=profile, parent=self.parent, name=name)
+                ResultWindow.ProfileResultWindow(profile=profile, parent=self.parent, name=name)
         else:
             profiles = []
 
@@ -132,11 +145,14 @@ class ProfileWindow(QDialog):
                 x2 = profile.second_point.x_index
                 y1 = profile.first_point.y_index
                 y2 = profile.second_point.y_index
-                distance, profile = active_window.data.get_profile((x1, y1), (x2, y2), self.profile_width)
+                if isinstance(active_window, ResultWindow.TopographyWindow):
+                    distance, profile = active_window.data.get_profile((x1, y1), (x2, y2), self.profile_width)
+                else:
+                    distance, profile = active_window.data[1].get_profile((x1, y1), (x2, y2), self.profile_width)
                 name = 'Profile' + str(enum)
                 profiles.append(ProfileData(distance, profile, unit=unit, xunit=xunit, name=name))
-            name='Profiles'
-            ProfileResultWindow(profile=profiles, parent=self.parent, name=name)
+            name = 'Profiles'
+            ResultWindow.ProfileResultWindow(profile=profiles, parent=self.parent, name=name)
 
 
     def cancel(self):
@@ -145,7 +161,7 @@ class ProfileWindow(QDialog):
     def clear(self):
         if self.parent.active_result_window != None:
             active_window = self.parent.results_windows[self.parent.active_result_window]
-            active_window.profile_lines = []
+            active_window.profile_lines = [[] for i in range(4)]
             active_window.first_point = None
             active_window.draw()
             self.clear_plot()
