@@ -63,3 +63,8 @@ class SpectroscopyMap(Spectroscopy):
         self.z_forward = data.currentForw
         if self.ramp_reversal:
             self.z_backward = data.currentBack
+
+    def get_x_range(self):
+        min_x = np.amin(self.x)
+        max_x = np.amax(self.x)
+        return max_x - min_x

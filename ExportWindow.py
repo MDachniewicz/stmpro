@@ -12,12 +12,16 @@ class ExportWindow(QMainWindow):
     FILETYPES_TOPO = ['png', 'jpg', 'svg', 'eps']
     COLORMAPS = ['afmhot', 'hot', 'gist_heat', 'gist_gray']
     COLORS = ['black', 'white', 'blue', 'green']
+    DATA_TYPES = ['topo', 'spectro']
 
     def __init__(self, parent):
         super(ExportWindow, self).__init__()
         self.parent = parent
         self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.active_window = None
+
+        # Data selected for combined results:
+        self.data_selected = 'topo'
 
         self.filetype = 'png'
         self.colorbar = False
@@ -59,6 +63,7 @@ class ExportWindow(QMainWindow):
         self.layout_preview.addWidget(self.canvas)
 
         self._create_topography_filetypes()
+        self._create_data_selector()
         self._create_image_settings()
 
     def _create_topography_filetypes(self):
@@ -66,6 +71,12 @@ class ExportWindow(QMainWindow):
         self.combobox_filetypes.addItems(self.FILETYPES_TOPO)
         self.layout_settings.addWidget(self.combobox_filetypes)
         self.combobox_filetypes.currentIndexChanged.connect(self._filetype_text_changed)
+
+    def _create_data_selector(self):
+        self.combobox_data_selector = QComboBox(self)
+        self.combobox_data_selector.addItems(self.DATA_TYPES)
+        self.layout_settings.addWidget(self.combobox_data_selector)
+        self.combobox_data_selector.currentIndexChanged.connect(self._data_selector_text_changed)
 
     def _create_image_settings(self):
         self.setting_colorbar = QCheckBox('Colorbar', self)
@@ -148,6 +159,10 @@ class ExportWindow(QMainWindow):
 
     def _filetype_text_changed(self, i):
         self.filetype = self.combobox_filetypes.currentText()
+
+    def _data_selector_text_changed(self, i):
+        self.data_selected = self.combobox_data_selector.currentText()
+        self.update()
 
     def _colorbar_changed(self):
         self.colorbar = self.setting_colorbar.isChecked()
@@ -244,6 +259,12 @@ class ExportWindow(QMainWindow):
         self.label_dpi.show()
         self.setting_dpi.show()
 
+    def _show_plot_settings(self):
+        pass
+
+    def _show_data_selector(self):
+        self.combobox_data_selector.show()
+
     def update(self):
         self._hide_from_layout(self.layout_settings)
         if self.parent.active_result_window is not None:
@@ -251,6 +272,18 @@ class ExportWindow(QMainWindow):
             if isinstance(self.active_window, ResultWindow.TopographyWindow):
                 self._show_topography_filetypes()
                 self._show_image_settings()
+            elif isinstance(self.active_window, (ResultWindow.SpectroscopyWindow, ResultWindow.ProfileResultWindow)):
+                self._show_topography_filetypes()
+                self._show_plot_settings()
+            elif isinstance(self.active_window, ResultWindow.CombinedSpectroscopyMapWindow):
+                self._show_topography_filetypes()
+                self._show_data_selector()
+                if self.data_selected == 'topo':
+                    self._show_topography_filetypes()
+                    self._show_image_settings()
+                if self.data_selected == 'spectro':
+                    self._show_topography_filetypes()
+                    self._show_image_settings()
             self.draw()
 
     def _delete_from_layout(self, layout):
@@ -263,8 +296,14 @@ class ExportWindow(QMainWindow):
     def draw(self):
         self.canvas.fig.clf()
         self.canvas.axes = self.canvas.fig.add_subplot(111)
-        im = self.canvas.axes.pcolormesh(self.active_window.data.X, self.active_window.data.Y,
-                                         self.active_window.data.Z, cmap=self.colormap)
+        if isinstance(self.active_window, (ResultWindow.TopographyWindow)):
+            im = self.canvas.axes.pcolormesh(self.active_window.data.X, self.active_window.data.Y,
+                                             self.active_window.data.Z, cmap=self.colormap)
+        elif isinstance(self.active_window, ResultWindow.CombinedSpectroscopyMapWindow) and self.data_selected =='topo':
+            im = self.canvas.axes.pcolormesh(self.active_window.data[1].X, self.active_window.data[1].Y,
+                                             self.active_window.data[1].Z, cmap=self.colormap)
+        elif isinstance(self.active_window, ResultWindow.CombinedSpectroscopyMapWindow) and self.data_selected =='spectro':
+            im = self.canvas.axes.pcolormesh(self.active_window.data[0].x, self.active_window.data[0].y, self.active_window.data[0].z_forward[:, :, self.active_window.active_plane], cmap=self.colormap)
         self.canvas.axes.set_aspect('equal')
         if self.profiles:
             self._draw_profile_lines()
@@ -272,13 +311,29 @@ class ExportWindow(QMainWindow):
             divider = make_axes_locatable(self.canvas.axes)
             self.canvas.caxes = divider.append_axes("right", size="3%", pad=0.02)
             self.cb = self.canvas.fig.colorbar(im, cax=self.canvas.caxes)
-            self.cb.ax.set_title(self.active_window.data.unit)
+            if isinstance(self.active_window, (ResultWindow.TopographyWindow)):
+                self.cb.ax.set_title(self.active_window.data.unit)
+            elif isinstance(self.active_window,
+                            ResultWindow.CombinedSpectroscopyMapWindow) and self.data_selected == 'topo':
+                self.cb.ax.set_title(self.active_window.data[1].unit)
+            elif isinstance(self.active_window,
+                            ResultWindow.CombinedSpectroscopyMapWindow) and self.data_selected == 'spectro':
+                self.cb.ax.set_title(self.active_window.data[0].unit)
         if not self.rulers:
             self.canvas.axes.get_xaxis().set_visible(False)
             self.canvas.axes.get_yaxis().set_visible(False)
         else:
-            self.canvas.axes.set_xlabel(f'x [{self.active_window.data.xunit}]', fontsize=self.fontsize_labels)
-            self.canvas.axes.set_ylabel(f'y [{self.active_window.data.xunit}]', fontsize=self.fontsize_labels)
+            if isinstance(self.active_window, (ResultWindow.TopographyWindow)):
+                self.canvas.axes.set_xlabel(f'x [{self.active_window.data.xunit}]', fontsize=self.fontsize_labels)
+                self.canvas.axes.set_ylabel(f'y [{self.active_window.data.xunit}]', fontsize=self.fontsize_labels)
+            elif isinstance(self.active_window,
+                            ResultWindow.CombinedSpectroscopyMapWindow) and self.data_selected == 'topo':
+                self.canvas.axes.set_xlabel(f'x [{self.active_window.data[1].xunit}]', fontsize=self.fontsize_labels)
+                self.canvas.axes.set_ylabel(f'y [{self.active_window.data[1].xunit}]', fontsize=self.fontsize_labels)
+            elif isinstance(self.active_window,
+                            ResultWindow.CombinedSpectroscopyMapWindow) and self.data_selected == 'spectro':
+                self.canvas.axes.set_xlabel(f'x [{self.active_window.data[0].xunit}]', fontsize=self.fontsize_labels)
+                self.canvas.axes.set_ylabel(f'y [{self.active_window.data[0].xunit}]', fontsize=self.fontsize_labels)
             self.canvas.axes.tick_params(axis='both', which='major', labelsize=self.fontsize)
         if self.scalebar:
             self._draw_scale_bar()
@@ -291,21 +346,57 @@ class ExportWindow(QMainWindow):
         self.canvas.draw()
 
     def _draw_scale_bar(self):
-        shape = self.active_window.data.X.shape
-        xrange = self.active_window.data.get_x_range()
-        length = round(0.2 * xrange)
-        text = str(length) + ' ' + self.active_window.data.xunit
-        x1 = self.active_window.data.X[1, round(0.1 * shape[0])]
-        x2 = self.active_window.data.X[1, round(0.3 * shape[0])]
-        y1 = self.active_window.data.Y[round(0.12 * shape[0]), 1]
-        y2 = self.active_window.data.Y[round(0.12 * shape[0]), 1]
-        line = matplotlib.lines.Line2D([x1, x2],
-                                       [y1, y2], linewidth=0.01 * shape[1],
-                                       color=self.scalebar_color, solid_capstyle='butt')
-        text = matplotlib.text.Text(x=self.active_window.data.X[1, round(0.2 * shape[0])],
-                                    y=self.active_window.data.Y[round(0.15 * shape[1]), 1],
-                                    text=text,
-                                    horizontalalignment='center', fontsize=self.scalebar_fontsize, color=self.scalebar_color)
+        if isinstance(self.active_window, ResultWindow.TopographyWindow):
+            shape = self.active_window.data.X.shape
+            xrange = self.active_window.data.get_x_range()
+            length = round(0.2 * xrange)
+            text = str(length) + ' ' + self.active_window.data.xunit
+            x1 = self.active_window.data.X[1, round(0.1 * shape[0])]
+            x2 = self.active_window.data.X[1, round(0.3 * shape[0])]
+            y1 = self.active_window.data.Y[round(0.12 * shape[0]), 1]
+            y2 = self.active_window.data.Y[round(0.12 * shape[0]), 1]
+            line = matplotlib.lines.Line2D([x1, x2],
+                                           [y1, y2], linewidth=5,
+                                           color=self.scalebar_color, solid_capstyle='butt')
+            text = matplotlib.text.Text(x=self.active_window.data.X[1, round(0.2 * shape[0])],
+                                        y=self.active_window.data.Y[round(0.15 * shape[1]), 1],
+                                        text=text,
+                                        horizontalalignment='center', fontsize=self.scalebar_fontsize, color=self.scalebar_color)
+        if isinstance(self.active_window, ResultWindow.CombinedSpectroscopyMapWindow) and self.data_selected == 'topo':
+            shape = self.active_window.data[1].X.shape
+            xrange = self.active_window.data[1].get_x_range()
+            length = round(0.2 * xrange)
+            text = str(length) + ' ' + self.active_window.data[1].xunit
+            x1 = self.active_window.data[1].X[1, round(0.1 * shape[0])]
+            x2 = self.active_window.data[1].X[1, round(0.3 * shape[0])]
+            y1 = self.active_window.data[1].Y[round(0.12 * shape[0]), 1]
+            y2 = self.active_window.data[1].Y[round(0.12 * shape[0]), 1]
+            line = matplotlib.lines.Line2D([x1, x2],
+                                           [y1, y2], linewidth=5,
+                                           color=self.scalebar_color, solid_capstyle='butt')
+            text = matplotlib.text.Text(x=self.active_window.data[1].X[1, round(0.2 * shape[0])],
+                                        y=self.active_window.data[1].Y[round(0.15 * shape[1]), 1],
+                                        text=text,
+                                        horizontalalignment='center', fontsize=self.scalebar_fontsize,
+                                        color=self.scalebar_color)
+        if isinstance(self.active_window,
+                      ResultWindow.CombinedSpectroscopyMapWindow) and self.data_selected == 'spectro':
+            shape = self.active_window.data[0].x.shape
+            xrange = self.active_window.data[0].get_x_range()
+            length = round(0.2 * xrange)
+            text = str(length) + ' ' + self.active_window.data[0].xunit
+            x1 = self.active_window.data[0].x[1, round(0.1 * shape[0])]
+            x2 = self.active_window.data[0].x[1, round(0.3 * shape[0])]
+            y1 = self.active_window.data[0].y[round(0.12 * shape[0]), 1]
+            y2 = self.active_window.data[0].y[round(0.12 * shape[0]), 1]
+            line = matplotlib.lines.Line2D([x1, x2],
+                                           [y1, y2], linewidth=5,
+                                           color=self.scalebar_color, solid_capstyle='butt')
+            text = matplotlib.text.Text(x=self.active_window.data[0].x[1, round(0.2 * shape[0])],
+                                        y=self.active_window.data[0].y[round(0.15 * shape[1]), 1],
+                                        text=text,
+                                        horizontalalignment='center', fontsize=self.scalebar_fontsize,
+                                        color=self.scalebar_color)
         self.canvas.axes.add_line(line)
         self.canvas.axes.add_artist(text)
 
