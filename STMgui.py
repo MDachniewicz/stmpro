@@ -12,7 +12,8 @@ from PyQt5.QtWidgets import (QMainWindow, QMenu,
                              QAction, QFileDialog, QActionGroup)
 
 import Files
-from ResultWindow import ResultWindow, SpectroscopyWindow, SpectroscopyMapWindow, TopographyWindow
+from Topography import Topography
+from ResultWindow import ResultWindow, SpectroscopyWindow, SpectroscopyMapWindow, CombinedSpectroscopyMapWindow, TopographyWindow
 from FilterWindow import FilterWindow
 from ProfileWindow import ProfileWindow
 from HistogramWindow import HistogramWindow
@@ -581,13 +582,16 @@ class MainWindow(QMainWindow):
                 self.fft_win.clear_plot()
                 self.scale_win.disable()
 
-    def openResultWindow(self, data, filetype):
+    def openResultWindow(self, data, filetype, ref_data=None):
         if filetype == 'Z' or filetype == 'I':
             win = TopographyWindow(data=data, parent=self)
         if filetype == 'I(V)-curve':
             win = SpectroscopyWindow(data=data, parent=self)
         if filetype == 'I(V)-map':
-            win = SpectroscopyMapWindow(data=data, parent=self)
+            if ref_data:
+                win = CombinedSpectroscopyMapWindow(data=data, ref_data=ref_data, parent=self)
+            else:
+                win = SpectroscopyMapWindow(data=data, parent=self)
         win.show()
 
     def openFile(self):
@@ -598,8 +602,8 @@ class MainWindow(QMainWindow):
                                                 options=options)
         for file in files:
             try:
-                data, filetype = Files.NewFile(file)
-                self.openResultWindow(data, filetype)
+                data, filetype, ref_data = Files.NewFile(file)
+                self.openResultWindow(data, filetype, ref_data)
             except FileNotFoundError as e:
                 if e.args[0] == "NoHeader":
                     QtWidgets.QMessageBox.question(self,
@@ -699,7 +703,7 @@ class MainWindow(QMainWindow):
     def rotate_clockwise(self):
         if self.results_windows != []:
             result = self.results_windows[self.active_result_window]
-            result.modifyData(result.data.rotate90, 1)
+            result.modifyData(Topography.rotate90, param=1)
             self._update_menu()
             self._update_push_buttons()
             self.update_windows()
@@ -707,7 +711,7 @@ class MainWindow(QMainWindow):
     def rotate_anticlockwise(self):
         if self.results_windows != []:
             result = self.results_windows[self.active_result_window]
-            result.modifyData(result.data.rotate90, -1)
+            result.modifyData(Topography.rotate90, param=-1)
             self._update_menu()
             self._update_push_buttons()
             self.update_windows()
@@ -715,7 +719,7 @@ class MainWindow(QMainWindow):
     def mirror_ud(self):
         if self.results_windows != []:
             result = self.results_windows[self.active_result_window]
-            result.modifyData(result.data.mirror_ud)
+            result.modifyData(Topography.mirror_ud)
             self._update_menu()
             self._update_push_buttons()
             self.update_windows()
@@ -723,7 +727,7 @@ class MainWindow(QMainWindow):
     def mirror_lr(self):
         if self.results_windows != []:
             result = self.results_windows[self.active_result_window]
-            result.modifyData(result.data.mirror_lr)
+            result.modifyData(Topography.mirror_lr)
             self._update_menu()
             self._update_push_buttons()
             self.update_windows()
@@ -731,7 +735,7 @@ class MainWindow(QMainWindow):
     def levelEdit(self):
         if self.results_windows != []:
             result = self.results_windows[self.active_result_window]
-            result.modifyData(result.data.level_linewise)
+            result.modifyData(Topography.level_linewise)
             self._update_menu()
             self._update_push_buttons()
             self.update_windows()
@@ -739,14 +743,14 @@ class MainWindow(QMainWindow):
     def level_planeEdit(self):
         if self.results_windows != []:
             result = self.results_windows[self.active_result_window]
-            result.modifyData(result.data.level_plane)
+            result.modifyData(Topography.level_plane)
             self._update_menu()
             self._update_push_buttons()
             self.update_windows()
 
     def setZeroLevelEdit(self):
         result = self.results_windows[self.active_result_window]
-        result.modifyData(result.data.set_zero_level)
+        result.modifyData(Topography.set_zero_level)
         self._update_menu()
         self._update_push_buttons()
         self.update_windows()

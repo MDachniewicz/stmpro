@@ -2,6 +2,7 @@ from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QMainWindow
 
 import ResultWindow
+from Topography import Topography
 
 
 class ScaleWindow(QMainWindow):
@@ -142,7 +143,7 @@ class ScaleWindow(QMainWindow):
 
     def apply(self):
         active_window = self.parent.results_windows[self.parent.active_result_window]
-        active_window.modifyData(active_window.data.scale,[self.x_factor, self.y_factor, self.z_factor])
+        active_window.modifyData(Topography.scale, param=[self.x_factor, self.y_factor, self.z_factor])
         self.parent.update_windows()
 
     def cancel(self):
