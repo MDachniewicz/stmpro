@@ -203,7 +203,7 @@ class TopographyWindow(ResultWindow):
         y1 = self.data.Y[round(0.12 * shape[0]), 1]
         y2 = self.data.Y[round(0.12 * shape[0]), 1]
         line = matplotlib.lines.Line2D([x1, x2],
-                                       [y1, y2], linewidth=0.01 * shape[1],
+                                       [y1, y2], linewidth=5,
                                        color='black', solid_capstyle='butt')
         text = matplotlib.text.Text(x=self.data.X[1, round(0.2 * shape[0])], y=self.data.Y[round(0.15 * shape[1]), 1],
                                     text=text,
@@ -594,13 +594,15 @@ class AreaCurves:
     def draw_point(self):
         self.parent.canvas_topo.axes.add_patch(self.point)
 
+
 class ProfileResultWindow(ResultWindow):
     def __init__(self, profile=None, parent=None, width=4.5, height=4, dpi=100, name=None):
         super().__init__(None, parent, width, height, dpi, name)
 
-        self.canvas = FigureCanvas(self)
-        self.setCentralWidget(self.canvas)
+        self.active_profile = 1
+        self.mode = 'all'
         self.data = profile
+        self.num_of_profiles = len(self.data)
         self.winState = self.States(self.data)
         if name is not None:
             self.setWindowTitle(name)
@@ -609,15 +611,72 @@ class ProfileResultWindow(ResultWindow):
 
         self.unit, self.xunit = self.get_unit()
         self.set_profile_units()
+        self._setup_ui()
+        self._connect_actions()
         self.show()
         self.draw()
 
+    def _setup_ui(self):
+        self.central_widget = QtWidgets.QWidget(self)
+
+        self.vertical_layout = QtWidgets.QVBoxLayout(self.central_widget)
+        self.canvas = FigureCanvas(self)
+        self.vertical_layout.addWidget(self.canvas)
+
+        self.tools_layout = QtWidgets.QHBoxLayout(self.central_widget)
+
+        self.all_single_layout = QtWidgets.QVBoxLayout(self)
+        self.all_single_label = QtWidgets.QLabel('Display profiles:')
+        self.all_single_layout.addWidget(self.all_single_label)
+        self.all_single_group = QtWidgets.QButtonGroup(self)
+        self.all_single_group.setExclusive(True)
+        self.all_checkbox = QtWidgets.QCheckBox('All')
+        self.all_checkbox.setChecked(True)
+        self.single_checkbox = QtWidgets.QCheckBox('Single')
+        self.all_single_group.addButton(self.all_checkbox)
+        self.all_single_group.addButton(self.single_checkbox)
+        self.all_single_layout.addWidget(self.all_checkbox)
+        self.all_single_layout.addWidget(self.single_checkbox)
+        self.tools_layout.addLayout(self.all_single_layout)
+
+        self.change_profile_spinbox = QtWidgets.QSpinBox(self)
+        self.change_profile_spinbox.setRange(1, self.num_of_profiles)
+        self.change_profile_spinbox.setValue(self.active_profile)
+        self.change_profile_spinbox.setDisabled(True)
+        self.tools_layout.addWidget(self.change_profile_spinbox)
+
+
+
+        self.vertical_layout.addLayout(self.tools_layout)
+
+        self.setCentralWidget(self.central_widget)
+
+    def _connect_actions(self):
+        self.all_checkbox.clicked.connect(self._change_mode_all)
+        self.single_checkbox.clicked.connect(self._change_mode_single)
+        self.change_profile_spinbox.valueChanged.connect(self._active_profile_changed)
+
+    def _change_mode_all(self):
+        self.mode = 'all'
+        self.change_profile_spinbox.setDisabled(True)
+        self.draw()
+
+    def _change_mode_single(self):
+        self.mode = 'single'
+        self.change_profile_spinbox.setDisabled(False)
+        self.draw()
+
+    def _active_profile_changed(self, value):
+        self.active_profile = value
+        self.draw()
+
     def draw(self):
-
         self.canvas.axes.cla()
-        for enum, prof in enumerate(self.data):
-            self.canvas.axes.plot(prof.distance, prof.profile)
-
+        if self.mode == 'all':
+            for enum, prof in enumerate(self.data):
+                self.canvas.axes.plot(prof.distance, prof.profile)
+        elif self.mode == 'single':
+            self.canvas.axes.plot(self.data[self.active_profile-1].distance, self.data[self.active_profile-1].profile)
         self.canvas.axes.set_xlabel(self.xunit)
         self.canvas.axes.set_ylabel(self.unit)
         self.canvas.draw()
