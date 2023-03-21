@@ -5,6 +5,7 @@ from matplotlib.figure import Figure
 import ResultWindow
 from Topography import ProfileData
 
+
 class ProfileWindow(QDialog):
     def __init__(self, parent):
         super(ProfileWindow, self).__init__()
@@ -27,8 +28,6 @@ class ProfileWindow(QDialog):
         self.plotting_area = QtWidgets.QWidget(self)
         self.plotting_area.setGeometry(QtCore.QRect(0, 0, 750, 320))
 
-
-
         self.plotting_area_layout = QtWidgets.QVBoxLayout(self.plotting_area)
         self.canvas = FigureCanvas(self, 5, 3, 100)
         self.plotting_area_layout.addWidget(self.canvas)
@@ -45,7 +44,7 @@ class ProfileWindow(QDialog):
                 y1 = profile.first_point.y_index
                 y2 = profile.second_point.y_index
                 if isinstance(active_window, ResultWindow.TopographyWindow):
-                    distance, profile = active_window.data.get_profile((x1,y1), (x2, y2), self.profile_width)
+                    distance, profile = active_window.data.get_profile((x1, y1), (x2, y2), self.profile_width)
                 else:
                     distance, profile = active_window.data[1].get_profile((x1, y1), (x2, y2), self.profile_width)
                 self.canvas.axes.plot(distance, profile)
@@ -105,9 +104,9 @@ class ProfileWindow(QDialog):
 
     def _update_separate_windows(self):
         if self.checkbox.isChecked():
-            self.separate_profiles=True
+            self.separate_profiles = True
         else:
-            self.separate_profiles=False
+            self.separate_profiles = False
 
     def disable(self):
         self.applyButton.setDisabled(True)
@@ -154,12 +153,11 @@ class ProfileWindow(QDialog):
             name = 'Profiles'
             ResultWindow.ProfileResultWindow(profile=profiles, parent=self.parent, name=name)
 
-
     def cancel(self):
         self.hide()
 
     def clear(self):
-        if self.parent.active_result_window != None:
+        if self.parent.active_result_window is not None:
             active_window = self.parent.results_windows[self.parent.active_result_window]
             active_window.profile_lines = [[] for i in range(4)]
             active_window.first_point = None

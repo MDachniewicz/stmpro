@@ -3,7 +3,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import copy
 from PyQt5.QtWidgets import QMainWindow
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 
 matplotlib.use('Qt5Agg')
 
@@ -137,21 +137,71 @@ class TopographyWindow(ResultWindow):
         self.canvas_colorbar_topo.setMaximumWidth(100)
 
         self.setCentralWidget(self.plotting_area)
+
+        self._create_colormap_menu()
+
+        # Display settings
+        self.colormap = 'afmhot'
         xrange = self.data.get_x_range()
-
         self.point_size = 0.01 * xrange
-
         self.scale_bar = True
+        self.active_ax = self.data.active_ax
 
+        # Profiles
         self.first_point = None
         self.profile_lines = [[] for i in range(4)]
 
-        self.active_ax = self.data.active_ax
+
 
         # Setting window name
         if name is None:
             self.setWindowTitle(data.name)
         self.show()
+        self.draw()
+
+    def _create_colormap_menu(self):
+        # Create menu
+        self.colormap_menu = QtWidgets.QMenu(self)
+
+        #self.colormap_menu.setStyleSheet("QMenu::item:selected"
+        #                    "{"
+        #                    "background : lightgreen;"
+        #                    "}")
+        self.colormap_menu.setStyleSheet("QMenu::item:selected {background : lightblue;} QMenu::item:checked {background : lightgreen;}")
+
+        # Create actions group amd actions
+        self.change_colormap_group = QtWidgets.QActionGroup(self)
+        self.afmhot_action = QtWidgets.QAction('afmhot', self)
+        self.afmhot_action.setCheckable(True)
+        self.afmhot_action.setChecked(True)
+        self.gist_gray_action = QtWidgets.QAction('gist_gray', self)
+        self.gist_gray_action.setCheckable(True)
+        self.hot_action = QtWidgets.QAction('hot', self)
+        self.hot_action.setCheckable(True)
+        self.gist_heat_action = QtWidgets.QAction('gist_heat', self)
+        self.gist_heat_action.setCheckable(True)
+
+        # Add actions to group
+        self.change_colormap_group.addAction(self.afmhot_action)
+        self.change_colormap_group.addAction(self.hot_action)
+        self.change_colormap_group.addAction(self.gist_gray_action)
+        self.change_colormap_group.addAction(self.gist_heat_action)
+        self.change_colormap_group.setExclusive(True)
+
+        # Add actions to menu
+        self.colormap_menu.addAction(self.afmhot_action)
+        self.colormap_menu.addAction(self.hot_action)
+        self.colormap_menu.addAction(self.gist_gray_action)
+        self.colormap_menu.addAction(self.gist_heat_action)
+
+        # Connect actions to function
+        self.afmhot_action.triggered.connect(lambda: self._change_colormap('afmhot'))
+        self.gist_gray_action.triggered.connect(lambda: self._change_colormap('gist_gray'))
+        self.hot_action.triggered.connect(lambda: self._change_colormap('hot'))
+        self.gist_heat_action.triggered.connect(lambda: self._change_colormap('gist_heat'))
+
+    def _change_colormap(self, colormap):
+        self.colormap = colormap
         self.draw()
 
     def change_image(self, ax):
@@ -164,7 +214,7 @@ class TopographyWindow(ResultWindow):
         self.setWindowTitle(self.data.name)
         self.canvas_topo.axes.cla()
         self.canvas_colorbar_topo.axes.cla()
-        im = self.canvas_topo.axes.pcolormesh(self.data.X, self.data.Y, self.data.Z, cmap='afmhot', picker=True)
+        im = self.canvas_topo.axes.pcolormesh(self.data.X, self.data.Y, self.data.Z, cmap=self.colormap, picker=True)
         self.canvas_colorbar_topo.fig.colorbar(im, cax=self.canvas_colorbar_topo.axes)
         self.canvas_colorbar_topo.axes.set_title(self.data.unit)
         self.canvas_topo.axes.set_aspect('equal')
@@ -203,7 +253,7 @@ class TopographyWindow(ResultWindow):
         y1 = self.data.Y[round(0.12 * shape[0]), 1]
         y2 = self.data.Y[round(0.12 * shape[0]), 1]
         line = matplotlib.lines.Line2D([x1, x2],
-                                       [y1, y2], linewidth=0.01 * shape[1],
+                                       [y1, y2], linewidth=5,
                                        color='black', solid_capstyle='butt')
         text = matplotlib.text.Text(x=self.data.X[1, round(0.2 * shape[0])], y=self.data.Y[round(0.15 * shape[1]), 1],
                                     text=text,
@@ -230,18 +280,19 @@ class TopographyWindow(ResultWindow):
                 self._draw_profile(profile_line)
 
     def mouse_press_right(self, e, artist=None):
-        if e.inaxes != self.canvas_topo.axes:
-            return
-        if artist == None:
-            if self.first_point != None:
-                self.first_point = None
+        if e.inaxes == self.canvas_topo.axes:
+            if artist == None:
+                if self.first_point != None:
+                    self.first_point = None
+                else:
+                    return
             else:
-                return
-        else:
-            for enum, profile in enumerate(self.profile_lines[self.active_ax]):
-                if profile.first_point.point == artist or profile.second_point.point == artist:
-                    self.profile_lines[self.active_ax].pop(enum)
-        self.draw()
+                for enum, profile in enumerate(self.profile_lines[self.active_ax]):
+                    if profile.first_point.point == artist or profile.second_point.point == artist:
+                        self.profile_lines[self.active_ax].pop(enum)
+            self.draw()
+        if e.inaxes == self.canvas_colorbar_topo.axes:
+            self.colormap_menu.popup(QtGui.QCursor.pos())
 
 
 class SpectroscopyWindow(ResultWindow):
@@ -594,13 +645,15 @@ class AreaCurves:
     def draw_point(self):
         self.parent.canvas_topo.axes.add_patch(self.point)
 
+
 class ProfileResultWindow(ResultWindow):
     def __init__(self, profile=None, parent=None, width=4.5, height=4, dpi=100, name=None):
         super().__init__(None, parent, width, height, dpi, name)
 
-        self.canvas = FigureCanvas(self)
-        self.setCentralWidget(self.canvas)
+        self.active_profile = 1
+        self.mode = 'all'
         self.data = profile
+        self.num_of_profiles = len(self.data)
         self.winState = self.States(self.data)
         if name is not None:
             self.setWindowTitle(name)
@@ -609,15 +662,72 @@ class ProfileResultWindow(ResultWindow):
 
         self.unit, self.xunit = self.get_unit()
         self.set_profile_units()
+        self._setup_ui()
+        self._connect_actions()
         self.show()
         self.draw()
 
+    def _setup_ui(self):
+        self.central_widget = QtWidgets.QWidget(self)
+
+        self.vertical_layout = QtWidgets.QVBoxLayout(self.central_widget)
+        self.canvas = FigureCanvas(self)
+        self.vertical_layout.addWidget(self.canvas)
+
+        self.tools_layout = QtWidgets.QHBoxLayout(self.central_widget)
+
+        self.all_single_layout = QtWidgets.QVBoxLayout(self)
+        self.all_single_label = QtWidgets.QLabel('Display profiles:')
+        self.all_single_layout.addWidget(self.all_single_label)
+        self.all_single_group = QtWidgets.QButtonGroup(self)
+        self.all_single_group.setExclusive(True)
+        self.all_checkbox = QtWidgets.QCheckBox('All')
+        self.all_checkbox.setChecked(True)
+        self.single_checkbox = QtWidgets.QCheckBox('Single')
+        self.all_single_group.addButton(self.all_checkbox)
+        self.all_single_group.addButton(self.single_checkbox)
+        self.all_single_layout.addWidget(self.all_checkbox)
+        self.all_single_layout.addWidget(self.single_checkbox)
+        self.tools_layout.addLayout(self.all_single_layout)
+
+        self.change_profile_spinbox = QtWidgets.QSpinBox(self)
+        self.change_profile_spinbox.setRange(1, self.num_of_profiles)
+        self.change_profile_spinbox.setValue(self.active_profile)
+        self.change_profile_spinbox.setDisabled(True)
+        self.tools_layout.addWidget(self.change_profile_spinbox)
+
+
+
+        self.vertical_layout.addLayout(self.tools_layout)
+
+        self.setCentralWidget(self.central_widget)
+
+    def _connect_actions(self):
+        self.all_checkbox.clicked.connect(self._change_mode_all)
+        self.single_checkbox.clicked.connect(self._change_mode_single)
+        self.change_profile_spinbox.valueChanged.connect(self._active_profile_changed)
+
+    def _change_mode_all(self):
+        self.mode = 'all'
+        self.change_profile_spinbox.setDisabled(True)
+        self.draw()
+
+    def _change_mode_single(self):
+        self.mode = 'single'
+        self.change_profile_spinbox.setDisabled(False)
+        self.draw()
+
+    def _active_profile_changed(self, value):
+        self.active_profile = value
+        self.draw()
+
     def draw(self):
-
         self.canvas.axes.cla()
-        for enum, prof in enumerate(self.data):
-            self.canvas.axes.plot(prof.distance, prof.profile)
-
+        if self.mode == 'all':
+            for enum, prof in enumerate(self.data):
+                self.canvas.axes.plot(prof.distance, prof.profile)
+        elif self.mode == 'single':
+            self.canvas.axes.plot(self.data[self.active_profile-1].distance, self.data[self.active_profile-1].profile)
         self.canvas.axes.set_xlabel(self.xunit)
         self.canvas.axes.set_ylabel(self.unit)
         self.canvas.draw()
@@ -680,8 +790,9 @@ class FigureCanvas(FigureCanvasQTAgg):
 
 
 class FigureCanvasColorbar(FigureCanvasQTAgg):
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
+    def __init__(self, parent, width=5, height=4, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
+        self.parent = parent
         self.axes = self.fig.add_subplot(111)
         self.axes.set_position([0.15, 0.02, 0.2, 0.87])
         self.axes.tick_params(labelsize=8)
@@ -689,9 +800,19 @@ class FigureCanvasColorbar(FigureCanvasQTAgg):
 
         super(FigureCanvasColorbar, self).__init__(self.fig)
 
+        self.connect()
+
+    def connect(self):
+        self.cidpress = self.mpl_connect(
+            'button_press_event', self.on_press)
+
+    def on_press(self, e):
+        if e.button == 3:
+            self.button = 'right'
+            self.parent.mouse_press_right(e)
 
 class FigureCanvasImg(FigureCanvasQTAgg):
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
+    def __init__(self, parent, width=5, height=4, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
         self.axes.set_axis_off()
