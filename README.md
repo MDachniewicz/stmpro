@@ -36,11 +36,11 @@ STMpro is hobby project, thus regular updates should not be expected.
 ## Installation
 Windows (8, 10, 11) binaries are available [here](https://github.com/MDachniewicz/stmpro/releases)
 
-For 
 1. Install Python 3.9
 2. Install dependencies <code>pip install -r requirements.txt</code>
 3. Run STM.py <code>python -m STM.py</code>
 
+<!---
 ## Usage
 
 ### Open file
@@ -48,3 +48,4 @@ For
 
 ### Profiles
 
+--->
