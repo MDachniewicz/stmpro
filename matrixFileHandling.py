@@ -204,7 +204,10 @@ class Matrix:
         return None
 
     def _openRefFile(self):
-        self.mtrxRef = Matrix(self.refFile)
+        try:
+            self.mtrxRef = Matrix(self.refFile)
+        except FileNotFoundError:
+            self.mtrxRef = None
 
     def openIZData(self):
         pass

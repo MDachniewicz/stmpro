@@ -457,9 +457,14 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         self.active_plane = 0
         xrange = self.data[1].get_x_range()
         self.point_size = 0.01 * xrange
+
+        xrange_spectro = self.data[0].get_x_range()
+        self.point_size_spectro = 0.01 * xrange_spectro
+
         self.scale_bar = True
         self.first_point = None
         self.profile_lines = [[] for i in range(4)]
+        self.curves = []
 
         self.active_ax = self.data[1].active_ax
 
@@ -555,6 +560,11 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         point.draw_point()
         self.canvas_topo.draw()
 
+    def _draw_curve(self, curve):
+        curve.draw_point()
+        self.canvas_map.draw()
+        self.canvas_topo.draw()
+
     def redraw(self):
         self.canvas_map.axes.cla()
         self.im2 = self.canvas_map.axes.pcolormesh(self.data[0].x, self.data[0].y, self.data[0].z_forward[:, :, self.active_plane], cmap='afmhot', picker=True)
@@ -587,9 +597,9 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         self.canvas_colorbar_topo.draw()
 
     def mouse_press(self, e, indices):
-        if e.inaxes != self.canvas_topo.axes:
+        if e.inaxes != self.canvas_topo.axes and e.inaxes != self.canvas_map.axes:
             return
-        if self.parent.interaction_mode == 'profile':
+        if self.parent.interaction_mode == 'profile' and e.inaxes == self.canvas_topo.axes:
             line = int(indices / self.data[1].Z.shape[1])
             point = int(indices % (self.data[1].Z.shape[0]))
             x = self.data[1].X[line, point]
@@ -603,6 +613,20 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
                 self.profile_lines[self.active_ax].append(profile_line)
                 self.first_point = None
                 self._draw_profile(profile_line)
+        if self.parent.interaction_mode == 'pick_curve' and e.inaxes == self.canvas_map.axes:
+            line = int(indices / self.data[0].x.shape[1])
+            point = int(indices % (self.data[0].x.shape[0]))
+            x = self.data[0].x[line, point]
+            y = self.data[0].y[line, point]
+
+            line_topo = int(self.data[1].X.shape[1]*line/self.data[0].x.shape[1])
+            point_topo = int(self.data[1].X.shape[0]*point/self.data[0].x.shape[0])
+            x_topo = self.data[1].X[line_topo, point_topo]
+            y_topo = self.data[1].Y[line_topo, point_topo]
+
+            curve = SingleCurve(parent=self, x=x, y=y, x_index=point, y_index=line, x_topo=x_topo, y_topo=y_topo, x_index_topo=point_topo, y_index_topo=line_topo, size=self.point_size_spectro, size_topo=self.point_size)
+            self.curves.append(curve)
+            self._draw_curve(curve)
 
     def mouse_press_right(self, e, artist=None):
         if e.inaxes != self.canvas_topo.axes:
@@ -619,17 +643,25 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         self.draw()
 
 class SingleCurve:
-    def __init__(self, parent, x=0, y=0, x_index=None, y_index=None, size=1):
+    def __init__(self, parent, x, y, x_index, y_index, x_topo, y_topo, x_index_topo, y_index_topo, size=1, size_topo=1):
         self.parent = parent
         self.x_index = x_index
         self.y_index = y_index
         self.x = x
         self.y = y
-        self.point = matplotlib.patches.Ellipse((x, y), size, size, fc='r', alpha=0.5, edgecolor='r')
+
+        self.x_index_topo = x_index_topo
+        self.y_index_topo = y_index_topo
+        self.x_topo = x_topo
+        self.y_topo = y_topo
+
+        self.point = matplotlib.patches.Rectangle((x, y), size, size, fc='r', alpha=0.5, edgecolor='r')
+        self.point_topo = matplotlib.patches.Rectangle((x_topo, y_topo), size_topo, size_topo, fc='r', alpha=0.5, edgecolor='r')
         self.point.set_picker(5)
 
     def draw_point(self):
-        self.parent.canvas_topo.axes.add_patch(self.point)
+        self.parent.canvas_map.axes.add_patch(self.point)
+        self.parent.canvas_topo.axes.add_patch(self.point_topo)
 
 
 class AreaCurves:

@@ -63,7 +63,7 @@ class MainWindow(QMainWindow):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("STMpro")
         MainWindow.setWindowTitle("STMpro")
-        MainWindow.setFixedSize(310, 300)
+        MainWindow.setFixedSize(310, 350)
         button_size = 40
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("central_widget")
@@ -358,10 +358,20 @@ class MainWindow(QMainWindow):
         self.vertical_layout.addWidget(self.label4)
 
         self.grid_layout4 = QtWidgets.QGridLayout(self.centralwidget)
-        self.grid_layout4.setObjectName("Curves")
+        self.grid_layout4.setObjectName("Spectroscopy")
         self.vertical_layout.addLayout(self.grid_layout4)
 
-
+        self.pick_curve_button = QtWidgets.QPushButton(self.centralwidget)
+        self.pick_curve_button.setObjectName("pick_curve_button")
+        self.pick_curve_button.setMinimumSize(QtCore.QSize(button_size, button_size))
+        self.pick_curve_button.setMaximumSize(QtCore.QSize(button_size, button_size))
+        self.pick_curve_button.setText("")
+        self.pick_curve_button.setCheckable(True)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(resources_path("")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.pick_curve_button.setIcon(icon)
+        self.pick_curve_button.setIconSize(QtCore.QSize(button_size, button_size))
+        self.grid_layout4.addWidget(self.pick_curve_button, 0, 5, 1, 1)
 
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -500,6 +510,8 @@ class MainWindow(QMainWindow):
         self.vertical_mirror_button.clicked.connect(self.mirror_lr)
         self.horizontal_mirror_button.clicked.connect(self.mirror_ud)
 
+        self.pick_curve_button.clicked.connect(self.pick_curve)
+
     def _update_push_buttons(self):
         if self.active_result_window == None:
             self.export_button.setDisabled(True)
@@ -517,6 +529,8 @@ class MainWindow(QMainWindow):
             self.filter_button.setDisabled(True)
             self.fft_button.setDisabled(True)
 
+            self.pick_curve_button.setDisabled(True)
+
         else:
             active_window = self.results_windows[self.active_result_window]
             self.export_button.setDisabled(False)
@@ -533,6 +547,8 @@ class MainWindow(QMainWindow):
                 self.filter_button.setDisabled(False)
                 self.fft_button.setDisabled(False)
 
+                self.pick_curve_button.setDisabled(False)
+
             if isinstance(active_window, SpectroscopyWindow):
                 self.level_linewise_button.setDisabled(True)
                 self.level_plane_button.setDisabled(True)
@@ -545,6 +561,8 @@ class MainWindow(QMainWindow):
                 self.horizontal_mirror_button.setDisabled(True)
                 self.filter_button.setDisabled(True)
                 self.fft_button.setDisabled(True)
+
+                self.pick_curve_button.setDisabled(True)
 
             if active_window.winState.undoPossible():
                 self.undo_button.setDisabled(False)
@@ -870,6 +888,12 @@ class MainWindow(QMainWindow):
             self.change_mode(None)
             self.profile_win_active = False
         self.update_windows()
+
+    def pick_curve(self):
+        if self.pick_curve_button.isChecked():
+            self.change_mode('pick_curve')
+        else:
+            self.change_mode(None)
 
     def hist_edit(self):
         self.hist_win.show()
