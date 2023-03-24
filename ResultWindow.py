@@ -644,14 +644,14 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
             for curve in self.curves:
                 x = curve.x_index
                 y = curve.y_index
-                self.canvas_plot.axes.plot(self.data[0].planes, self.data[0].z_forward[x, y, :])
+                self.canvas_plot.axes.plot(self.data[0].planes, self.data[0].z_forward[y, x, :])
         if self.mode == 'single':
             #if self.active_curve > len(self.curves):
             #    self.active_curve = len(self.curves)
             curve = self.curves[self.active_curve]
             x = curve.x_index
             y = curve.y_index
-            self.canvas_plot.axes.plot(self.data[0].planes, self.data[0].z_forward[x, y, :])
+            self.canvas_plot.axes.plot(self.data[0].planes, self.data[0].z_forward[y, x, :])
 
         self.canvas_plot.draw()
 
@@ -687,6 +687,8 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         self.canvas_topo.axes.set_aspect('equal')
         if self.parent.interaction_mode == 'profile':
             self._draw_profile_lines()
+        for curve in self.curves:
+            self._draw_curve(curve)
         self.canvas_map.draw()
         self.canvas_topo.draw()
         self.canvas_colorbar.draw()
@@ -730,17 +732,23 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
             self._plot_curves()
 
     def mouse_press_right(self, e, artist=None):
-        if e.inaxes != self.canvas_topo.axes:
-            return
-        if artist == None:
-            if self.first_point != None:
-                self.first_point = None
+        if e.inaxes == self.canvas_topo.axes or e.inaxes == self.canvas_map.axes:
+            if artist == None:
+                if self.first_point != None:
+                    self.first_point = None
+                else:
+                    return
             else:
-                return
-        else:
-            for enum, profile in enumerate(self.profile_lines[self.active_ax]):
-                if profile.first_point.point == artist or profile.second_point.point == artist:
-                    self.profile_lines[self.active_ax].pop(enum)
+                for enum, profile in enumerate(self.profile_lines[self.active_ax]):
+                    if profile.first_point.point == artist or profile.second_point.point == artist:
+                        self.profile_lines[self.active_ax].pop(enum)
+                for enum, curve in enumerate(self.curves):
+                    if curve.point == artist or curve.point_topo == artist:
+                        self.curves.pop(enum)
+                        self._update_ui()
+                        self._set_active_curve()
+                        self._plot_curves()
+
         self.draw()
 
 
@@ -995,6 +1003,8 @@ class FigureCanvasImg(FigureCanvasQTAgg):
 
     def on_pick(self, e):
         if isinstance(e.artist, matplotlib.patches.Ellipse):
+            self.artist = e.artist
+        if isinstance(e.artist, matplotlib.patches.Rectangle):
             self.artist = e.artist
         if isinstance(e.artist, matplotlib.collections.QuadMesh):
             self.indices = e.ind
