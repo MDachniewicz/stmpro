@@ -465,6 +465,8 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         self.first_point = None
         self.profile_lines = [[] for i in range(4)]
         self.curves = []
+        self.mode = 'all'
+        self.active_curve = 0
 
         self.active_ax = self.data[1].active_ax
 
@@ -473,6 +475,7 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
             self.setWindowTitle(data.name)
 
         self._setup_ui()
+        self._connect_actions()
         self.show()
         self.draw()
 
@@ -495,29 +498,72 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         self.layout_main = QtWidgets.QVBoxLayout(self.central_widget)
 
         self.layout_results = QtWidgets.QHBoxLayout(self.central_widget)
+
+        self.layout_topo = QtWidgets.QVBoxLayout(self.central_widget)
+        self.layout_topo_results = QtWidgets.QHBoxLayout(self.central_widget)
         self.canvas_topo = FigureCanvasImg(self)
         self.canvas_colorbar_topo = FigureCanvasColorbar(self)
         self.canvas_colorbar_topo.setMinimumWidth(100)
         self.canvas_colorbar_topo.setMaximumWidth(100)
+        self.layout_topo_results.addWidget(self.canvas_topo)
+        self.layout_topo_results.addWidget(self.canvas_colorbar_topo)
+        self.layout_topo.addLayout(self.layout_topo_results)
+        self.layout_results.addLayout(self.layout_topo)
+
+        self.layout_map = QtWidgets.QVBoxLayout(self.central_widget)
+        self.layout_map_results = QtWidgets.QHBoxLayout(self.central_widget)
+        self.layout_map_settings = QtWidgets.QHBoxLayout(self.central_widget)
         self.canvas_map = FigureCanvasImg(self)
         self.canvas_colorbar = FigureCanvasColorbar(self)
         self.canvas_colorbar.setMinimumWidth(100)
         self.canvas_colorbar.setMaximumWidth(100)
+        self.layout_map_results.addWidget(self.canvas_map)
+        self.layout_map_results.addWidget(self.canvas_colorbar)
+        self.layout_map.addLayout(self.layout_map_results)
+        self.setting_plane = QtWidgets.QSpinBox(self.central_widget)
+        self.setting_plane.setRange(0, len(self.data[0].planes) - 1)
+        self.setting_plane.setValue(self.active_plane)
+
+        self.layout_map_settings.addWidget(self.setting_plane)
+        self.layout_map.addLayout(self.layout_map_settings)
+        self.layout_results.addLayout(self.layout_map)
+
+        self.layout_plot = QtWidgets.QVBoxLayout(self.central_widget)
+        self.layout_plot_results = QtWidgets.QHBoxLayout(self.central_widget)
+        self.layout_plot_settings = QtWidgets.QHBoxLayout(self.central_widget)
         self.canvas_plot = FigureCanvas(self)
-        self.layout_results.addWidget(self.canvas_topo)
-        self.layout_results.addWidget(self.canvas_colorbar_topo)
-        self.layout_results.addWidget(self.canvas_map)
-        self.layout_results.addWidget(self.canvas_colorbar)
-        self.layout_results.addWidget(self.canvas_plot)
+        self.layout_plot_results.addWidget(self.canvas_plot)
+        self.layout_plot.addLayout(self.layout_plot_results)
+        self.layout_all_single = QtWidgets.QVBoxLayout(self)
+        self.all_single_label = QtWidgets.QLabel('Display profiles:')
+        self.layout_all_single.addWidget(self.all_single_label)
+        self.all_single_group = QtWidgets.QButtonGroup(self)
+        self.all_single_group.setExclusive(True)
+        self.all_checkbox = QtWidgets.QCheckBox('All')
+        self.all_checkbox.setChecked(True)
+        self.single_checkbox = QtWidgets.QCheckBox('Single')
+        self.all_single_group.addButton(self.all_checkbox)
+        self.all_single_group.addButton(self.single_checkbox)
+        self.layout_all_single.addWidget(self.all_checkbox)
+        self.layout_all_single.addWidget(self.single_checkbox)
+        self.layout_plot_settings.addLayout(self.layout_all_single)
+        self.setting_curve_spinbox = QtWidgets.QSpinBox(self.central_widget)
+        self.setting_curve_spinbox.setRange(0, len(self.curves) - 1)
+        self.setting_curve_spinbox.setValue(self.active_curve)
+        self.setting_curve_spinbox.setDisabled(True)
+        self.layout_plot_settings.addWidget(self.setting_curve_spinbox)
+        self.layout_plot.addLayout(self.layout_plot_settings)
+        self.layout_results.addLayout(self.layout_plot)
+
         self.layout_main.addLayout(self.layout_results)
 
-        self.layout_controls = QtWidgets.QHBoxLayout(self.central_widget)
-        self.setting_plane = QtWidgets.QSpinBox(self.central_widget)
-        self.setting_plane.setRange(0, len(self.data[0].planes)-1)
-        self.setting_plane.setValue(self.active_plane)
-        self.setting_plane.valueChanged.connect(self._active_plane_changed)
-        self.layout_controls.addWidget(self.setting_plane)
-        self.layout_main.addLayout(self.layout_controls)
+        #self.layout_controls = QtWidgets.QHBoxLayout(self.central_widget)
+        #self.setting_plane = QtWidgets.QSpinBox(self.central_widget)
+        #self.setting_plane.setRange(0, len(self.data[0].planes)-1)
+        #self.setting_plane.setValue(self.active_plane)
+        #self.setting_plane.valueChanged.connect(self._active_plane_changed)
+        #self.layout_controls.addWidget(self.setting_plane)
+        #self.layout_main.addLayout(self.layout_controls)
 
         self.setCentralWidget(self.central_widget)
 
@@ -533,8 +579,28 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         self.cb2 = self.canvas_colorbar.fig.colorbar(self.im2, cax=self.canvas_colorbar.axes)
         self.canvas_colorbar.axes.set_title(self.data[0].unit)
 
+    def _connect_actions(self):
+        self.setting_plane.valueChanged.connect(self._active_plane_changed)
+        self.all_checkbox.clicked.connect(self._change_mode_all)
+        self.single_checkbox.clicked.connect(self._change_mode_single)
+        self.setting_curve_spinbox.valueChanged.connect(self._active_curve_changed)
+
+    def _change_mode_all(self):
+        self.mode = 'all'
+        self.setting_curve_spinbox.setDisabled(True)
+        self._plot_curves()
+
+    def _change_mode_single(self):
+        self.mode = 'single'
+        self.setting_curve_spinbox.setDisabled(False)
+        self._plot_curves()
+
     def _active_plane_changed(self, value):
         self.active_plane = value
+        self.redraw()
+
+    def _active_curve_changed(self, value):
+        self.active_curve = value
         self.redraw()
 
     def change_image(self, ax):
@@ -565,6 +631,9 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         self.canvas_map.draw()
         self.canvas_topo.draw()
 
+    def _plot_curves(self):
+        pass
+
     def redraw(self):
         self.canvas_map.axes.cla()
         self.im2 = self.canvas_map.axes.pcolormesh(self.data[0].x, self.data[0].y, self.data[0].z_forward[:, :, self.active_plane], cmap='afmhot', picker=True)
@@ -573,6 +642,8 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         self.canvas_map.axes.set_aspect('equal')
         if self.parent.interaction_mode == 'profile':
             self._draw_profile_lines()
+        for curve in self.curves:
+            self._draw_curve(curve)
         self.canvas_map.draw()
         self.canvas_colorbar.draw()
 
