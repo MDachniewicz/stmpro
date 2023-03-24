@@ -151,8 +151,6 @@ class TopographyWindow(ResultWindow):
         self.first_point = None
         self.profile_lines = [[] for i in range(4)]
 
-
-
         # Setting window name
         if name is None:
             self.setWindowTitle(data.name)
@@ -163,11 +161,12 @@ class TopographyWindow(ResultWindow):
         # Create menu
         self.colormap_menu = QtWidgets.QMenu(self)
 
-        #self.colormap_menu.setStyleSheet("QMenu::item:selected"
+        # self.colormap_menu.setStyleSheet("QMenu::item:selected"
         #                    "{"
         #                    "background : lightgreen;"
         #                    "}")
-        self.colormap_menu.setStyleSheet("QMenu::item:selected {background : lightblue;} QMenu::item:checked {background : lightgreen;}")
+        self.colormap_menu.setStyleSheet(
+            "QMenu::item:selected {background : lightblue;} QMenu::item:checked {background : lightgreen;}")
 
         # Create actions group amd actions
         self.change_colormap_group = QtWidgets.QActionGroup(self)
@@ -383,7 +382,7 @@ class SpectroscopyMapWindow(ResultWindow):
 
         self.layout_controls = QtWidgets.QHBoxLayout(self.central_widget)
         self.setting_plane = QtWidgets.QSpinBox(self.central_widget)
-        self.setting_plane.setRange(0, len(self.data.planes)-1)
+        self.setting_plane.setRange(0, len(self.data.planes) - 1)
         self.setting_plane.setValue(self.active_plane)
         self.setting_plane.valueChanged.connect(self._active_plane_changed)
         self.layout_controls.addWidget(self.setting_plane)
@@ -391,10 +390,10 @@ class SpectroscopyMapWindow(ResultWindow):
 
         self.setCentralWidget(self.central_widget)
 
-
         # First time drawing image and colorbar. Then draw() only updates colorbar instead of redrawing it. Significant performace difference.
-        self.im = self.canvas_map.axes.pcolormesh(self.data.x, self.data.y, self.data.z_forward[:, :, self.active_plane],
-                                             cmap='afmhot', picker=True)
+        self.im = self.canvas_map.axes.pcolormesh(self.data.x, self.data.y,
+                                                  self.data.z_forward[:, :, self.active_plane],
+                                                  cmap='afmhot', picker=True)
         self.cb = self.canvas_colorbar.fig.colorbar(self.im, cax=self.canvas_colorbar.axes)
         self.canvas_colorbar.axes.set_title(self.data.unit)
 
@@ -404,14 +403,14 @@ class SpectroscopyMapWindow(ResultWindow):
 
     def draw(self):
         self.canvas_map.axes.cla()
-        self.im = self.canvas_map.axes.pcolormesh(self.data.x, self.data.y, self.data.z_forward[:, :, self.active_plane], cmap='afmhot', picker=True)
+        self.im = self.canvas_map.axes.pcolormesh(self.data.x, self.data.y,
+                                                  self.data.z_forward[:, :, self.active_plane], cmap='afmhot',
+                                                  picker=True)
         self.cb.update_normal(self.im)
         self.canvas_colorbar.axes.set_title(self.data.unit)
         self.canvas_map.axes.set_aspect('equal')
         self.canvas_map.draw()
         self.canvas_colorbar.draw()
-
-
 
     def mouse_press(self, e, indices):
         if e.inaxes != self.canvas_map:
@@ -535,7 +534,7 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         self.layout_plot_results.addWidget(self.canvas_plot)
         self.layout_plot.addLayout(self.layout_plot_results)
         self.layout_all_single = QtWidgets.QVBoxLayout(self)
-        self.all_single_label = QtWidgets.QLabel('Display profiles:')
+        self.all_single_label = QtWidgets.QLabel('Display curves:')
         self.layout_all_single.addWidget(self.all_single_label)
         self.all_single_group = QtWidgets.QButtonGroup(self)
         self.all_single_group.setExclusive(True)
@@ -557,25 +556,25 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
 
         self.layout_main.addLayout(self.layout_results)
 
-        #self.layout_controls = QtWidgets.QHBoxLayout(self.central_widget)
-        #self.setting_plane = QtWidgets.QSpinBox(self.central_widget)
-        #self.setting_plane.setRange(0, len(self.data[0].planes)-1)
-        #self.setting_plane.setValue(self.active_plane)
-        #self.setting_plane.valueChanged.connect(self._active_plane_changed)
-        #self.layout_controls.addWidget(self.setting_plane)
-        #self.layout_main.addLayout(self.layout_controls)
+        # self.layout_controls = QtWidgets.QHBoxLayout(self.central_widget)
+        # self.setting_plane = QtWidgets.QSpinBox(self.central_widget)
+        # self.setting_plane.setRange(0, len(self.data[0].planes)-1)
+        # self.setting_plane.setValue(self.active_plane)
+        # self.setting_plane.valueChanged.connect(self._active_plane_changed)
+        # self.layout_controls.addWidget(self.setting_plane)
+        # self.layout_main.addLayout(self.layout_controls)
 
         self.setCentralWidget(self.central_widget)
 
-
         # First time drawing image and colorbar. Then draw() only updates colorbar instead of redrawing it. Significant performace difference.
         self.im1 = self.canvas_topo.axes.pcolormesh(self.data[1].X, self.data[1].Y,
-                                                   self.data[1].Z,
-                                                   cmap='afmhot', picker=True)
+                                                    self.data[1].Z,
+                                                    cmap='afmhot', picker=True)
         self.cb1 = self.canvas_colorbar_topo.fig.colorbar(self.im1, cax=self.canvas_colorbar_topo.axes)
         self.canvas_colorbar_topo.axes.set_title(self.data[1].unit)
-        self.im2 = self.canvas_map.axes.pcolormesh(self.data[0].x, self.data[0].y, self.data[0].z_forward[:, :, self.active_plane],
-                                             cmap='afmhot', picker=True)
+        self.im2 = self.canvas_map.axes.pcolormesh(self.data[0].x, self.data[0].y,
+                                                   self.data[0].z_forward[:, :, self.active_plane],
+                                                   cmap='afmhot', picker=True)
         self.cb2 = self.canvas_colorbar.fig.colorbar(self.im2, cax=self.canvas_colorbar.axes)
         self.canvas_colorbar.axes.set_title(self.data[0].unit)
 
@@ -584,6 +583,9 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         self.all_checkbox.clicked.connect(self._change_mode_all)
         self.single_checkbox.clicked.connect(self._change_mode_single)
         self.setting_curve_spinbox.valueChanged.connect(self._active_curve_changed)
+
+    def _update_ui(self):
+        self.setting_curve_spinbox.setRange(0, len(self.curves) - 1)
 
     def _change_mode_all(self):
         self.mode = 'all'
@@ -601,7 +603,12 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
 
     def _active_curve_changed(self, value):
         self.active_curve = value
-        self.redraw()
+        self._plot_curves()
+
+    def _set_active_curve(self):
+        if self.mode == 'single':
+            self.active_curve = len(self.curves)-1
+            self.setting_curve_spinbox.setValue(self.active_curve)
 
     def change_image(self, ax):
         self.winState.saveState(self.data)
@@ -632,11 +639,27 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         self.canvas_topo.draw()
 
     def _plot_curves(self):
-        pass
+        self.canvas_plot.axes.cla()
+        if self.mode == 'all':
+            for curve in self.curves:
+                x = curve.x_index
+                y = curve.y_index
+                self.canvas_plot.axes.plot(self.data[0].planes, self.data[0].z_forward[x, y, :])
+        if self.mode == 'single':
+            #if self.active_curve > len(self.curves):
+            #    self.active_curve = len(self.curves)
+            curve = self.curves[self.active_curve]
+            x = curve.x_index
+            y = curve.y_index
+            self.canvas_plot.axes.plot(self.data[0].planes, self.data[0].z_forward[x, y, :])
+
+        self.canvas_plot.draw()
 
     def redraw(self):
         self.canvas_map.axes.cla()
-        self.im2 = self.canvas_map.axes.pcolormesh(self.data[0].x, self.data[0].y, self.data[0].z_forward[:, :, self.active_plane], cmap='afmhot', picker=True)
+        self.im2 = self.canvas_map.axes.pcolormesh(self.data[0].x, self.data[0].y,
+                                                   self.data[0].z_forward[:, :, self.active_plane], cmap='afmhot',
+                                                   picker=True)
         self.cb2.update_normal(self.im2)
         self.canvas_colorbar.axes.set_title(self.data[0].unit)
         self.canvas_map.axes.set_aspect('equal')
@@ -651,9 +674,11 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
         self.canvas_map.axes.cla()
         self.canvas_topo.axes.cla()
         self.im1 = self.canvas_topo.axes.pcolormesh(self.data[1].X, self.data[1].Y,
-                                                   self.data[1].Z, cmap='afmhot',
+                                                    self.data[1].Z, cmap='afmhot',
+                                                    picker=True)
+        self.im2 = self.canvas_map.axes.pcolormesh(self.data[0].x, self.data[0].y,
+                                                   self.data[0].z_forward[:, :, self.active_plane], cmap='afmhot',
                                                    picker=True)
-        self.im2 = self.canvas_map.axes.pcolormesh(self.data[0].x, self.data[0].y, self.data[0].z_forward[:, :, self.active_plane], cmap='afmhot', picker=True)
         self.cb1.update_normal(self.im1)
         self.cb2.update_normal(self.im2)
         self.canvas_colorbar.axes.set_title(self.data[0].unit)
@@ -690,14 +715,19 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
             x = self.data[0].x[line, point]
             y = self.data[0].y[line, point]
 
-            line_topo = int(self.data[1].X.shape[1]*line/self.data[0].x.shape[1])
-            point_topo = int(self.data[1].X.shape[0]*point/self.data[0].x.shape[0])
+            line_topo = int(self.data[1].X.shape[1] * line / self.data[0].x.shape[1])
+            point_topo = int(self.data[1].X.shape[0] * point / self.data[0].x.shape[0])
             x_topo = self.data[1].X[line_topo, point_topo]
             y_topo = self.data[1].Y[line_topo, point_topo]
 
-            curve = SingleCurve(parent=self, x=x, y=y, x_index=point, y_index=line, x_topo=x_topo, y_topo=y_topo, x_index_topo=point_topo, y_index_topo=line_topo, size=self.point_size_spectro, size_topo=self.point_size)
+            curve = SingleCurve(parent=self, x=x, y=y, x_index=point, y_index=line, x_topo=x_topo, y_topo=y_topo,
+                                x_index_topo=point_topo, y_index_topo=line_topo, size=self.point_size_spectro,
+                                size_topo=self.point_size)
             self.curves.append(curve)
+            self._update_ui()
+            self._set_active_curve()
             self._draw_curve(curve)
+            self._plot_curves()
 
     def mouse_press_right(self, e, artist=None):
         if e.inaxes != self.canvas_topo.axes:
@@ -713,6 +743,7 @@ class CombinedSpectroscopyMapWindow(ResultWindow):
                     self.profile_lines[self.active_ax].pop(enum)
         self.draw()
 
+
 class SingleCurve:
     def __init__(self, parent, x, y, x_index, y_index, x_topo, y_topo, x_index_topo, y_index_topo, size=1, size_topo=1):
         self.parent = parent
@@ -727,7 +758,8 @@ class SingleCurve:
         self.y_topo = y_topo
 
         self.point = matplotlib.patches.Rectangle((x, y), size, size, fc='r', alpha=0.5, edgecolor='r')
-        self.point_topo = matplotlib.patches.Rectangle((x_topo, y_topo), size_topo, size_topo, fc='r', alpha=0.5, edgecolor='r')
+        self.point_topo = matplotlib.patches.Rectangle((x_topo, y_topo), size_topo, size_topo, fc='r', alpha=0.5,
+                                                       edgecolor='r')
         self.point.set_picker(5)
 
     def draw_point(self):
@@ -799,8 +831,6 @@ class ProfileResultWindow(ResultWindow):
         self.change_profile_spinbox.setDisabled(True)
         self.tools_layout.addWidget(self.change_profile_spinbox)
 
-
-
         self.vertical_layout.addLayout(self.tools_layout)
 
         self.setCentralWidget(self.central_widget)
@@ -830,7 +860,8 @@ class ProfileResultWindow(ResultWindow):
             for enum, prof in enumerate(self.data):
                 self.canvas.axes.plot(prof.distance, prof.profile)
         elif self.mode == 'single':
-            self.canvas.axes.plot(self.data[self.active_profile-1].distance, self.data[self.active_profile-1].profile)
+            self.canvas.axes.plot(self.data[self.active_profile - 1].distance,
+                                  self.data[self.active_profile - 1].profile)
         self.canvas.axes.set_xlabel(self.xunit)
         self.canvas.axes.set_ylabel(self.unit)
         self.canvas.draw()
@@ -913,6 +944,7 @@ class FigureCanvasColorbar(FigureCanvasQTAgg):
         if e.button == 3:
             self.button = 'right'
             self.parent.mouse_press_right(e)
+
 
 class FigureCanvasImg(FigureCanvasQTAgg):
     def __init__(self, parent, width=5, height=4, dpi=100):
