@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QComboBox, QCheckBox, QFileDialog
 
-from src.stmpro.gui import ResultWindow
+from src.stmpro.gui import result_window
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure

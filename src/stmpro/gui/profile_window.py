@@ -2,8 +2,8 @@ from PyQt5.QtWidgets import QDialog, QSlider, QLabel
 from PyQt5 import QtCore, QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-from src.stmpro.gui import ResultWindow
-from src.stmpro.data.Topography import ProfileData
+from src.stmpro.gui import result_window
+from src.stmpro.data.topography import ProfileData
 
 
 class ProfileWindow(QDialog):

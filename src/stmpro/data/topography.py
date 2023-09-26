@@ -7,7 +7,7 @@ Created on Thu Jan 26 20:58:54 2023
 import os
 import numpy as np
 import itertools
-from src.stmpro.data.STMData import STMData
+from src.stmpro.data.stm_data import STMData
 from src.stmpro.processing import Filters, Images, Curves
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable

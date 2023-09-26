@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QDialog
 from PyQt5 import QtCore, QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-from src.stmpro.gui.ResultWindow import HistogramResultWindow
+from src.stmpro.gui.result_window import HistogramResultWindow
 
 
 class HistogramWindow(QDialog):

@@ -7,7 +7,7 @@ Created on Tue Feb 14 14:20:08 2023
 
 from PyQt5.QtWidgets import QDialog, QComboBox, QSlider, QLabel
 from PyQt5 import QtCore, QtWidgets
-from src.stmpro.data.Topography import Topography
+from src.stmpro.data.topography import Topography
 
 
 class FilterWindow(QDialog):
@@ -78,9 +78,9 @@ class FilterWindow(QDialog):
     def apply(self):
         active_window = self.parent.results_windows[self.parent.active_result_window]
         if self.filters[self.active_filter] == "Median":
-            active_window.modifyData(Topography.median, param=self.maskSize)
+            active_window.modify_data(Topography.median, param=self.maskSize)
         if self.filters[self.active_filter] == "Mean":
-            active_window.modifyData(Topography.mean, param=self.maskSize)
+            active_window.modify_data(Topography.mean, param=self.maskSize)
         self.parent.update_windows()
 
     def cancel(self):

@@ -1,5 +1,5 @@
 import numpy as np
-from src.stmpro.data.STMData import STMData
+from src.stmpro.data.stm_data import STMData
 
 class Spectroscopy(STMData):
     def __init__(self, data):

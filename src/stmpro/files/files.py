@@ -5,9 +5,9 @@ Created on Thu Jan 26 21:36:07 2023
 @author: marek
 """
 
-from src.stmpro.files import matrixFileHandling as mfh
-from src.stmpro.data import Topography
-from src.stmpro.data import Spectroscopy
+from src.stmpro.files import matrix_file_handling as mfh
+from src.stmpro.data import topography
+from src.stmpro.data import spectroscopy
 
 import numpy as np
 

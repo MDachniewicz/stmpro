@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QDialog
 from PyQt5 import QtCore, QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-from src.stmpro.gui.ResultWindow import TopographyWindow
+from src.stmpro.gui.result_window import TopographyWindow
 
 
 class FourierWindow(QDialog):
